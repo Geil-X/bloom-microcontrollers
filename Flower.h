@@ -25,6 +25,7 @@ class Flower
     void enableFunction(bool enable);
     void slowlyOpen();
     void slowlyClose();
+    void continueUntilStall();
   private:
     int _enpin;
     int _dirpin;

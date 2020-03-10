@@ -248,56 +248,60 @@ void Flower::setRate(int rate)
 void Flower::home()
 {
   // Close to the end.
-  digitalWrite(DIR_PIN, 1);
+    digitalWrite(DIR_PIN, 1);
 
-  static uint32_t last_time=0;
-  int reading = 0;
+    static uint32_t last_time=0;
+    int reading = 0;
 
-  while (reading != 1)
-  {
-    uint32_t ms = millis();
-    uint32_t data;
-    uint8_t s;
-     if((ms-last_time) > 1500 ) //run every 1s
+    while (reading != 1)
     {
-      last_time = ms;
+      uint32_t ms = millis();
+      uint32_t data;
+      uint8_t s;
+      if((ms-last_time) > 1500 ) //run every 1s
+      {
+        last_time = ms;
 
-      //show REG_GSTAT
-      s = tmc_read(REG_GSTAT, &data);
-      Serial.print("GSTAT:     0x0");
-      Serial.print(data, HEX);
-      Serial.print("\t - ");
-      Serial.print("Status: 0x");
-      Serial.print(s, HEX);
-      if(s & 0x01) Serial.print(" reset");
-      if(s & 0x02) Serial.print(" error");
-      if(s & 0x04) Serial.print(" sg2");
-      if(s & 0x08) Serial.print(" standstill");
-      Serial.println(" ");
+        //show REG_GSTAT
+        s = tmc_read(REG_GSTAT, &data);
+        Serial.print("GSTAT:     0x0");
+        Serial.print(data, HEX);
+        Serial.print("\t - ");
+        Serial.print("Status: 0x");
+        Serial.print(s, HEX);
+        if(s & 0x01) Serial.print(" reset");
+        if(s & 0x02) Serial.print(" error");
+        if(s & 0x04) Serial.print(" sg2");
+        if(s & 0x08) Serial.print(" standstill");
+        Serial.println(" ");
 
-      //show REG_DRVSTATUS
-      s = tmc_read(REG_DRVSTATUS, &data);
-      Serial.print("DRVSTATUS: 0x");
-      Serial.print(data, HEX);
-      Serial.print("\t - ");
-      Serial.print("Status: 0x");
-      Serial.print(s, HEX);
-      if(s & 0x01) Serial.print(" reset");
-      if(s & 0x02) Serial.print(" error");
-      if(s & 0x04) Serial.print(" sg2");
-      if(s & 0x08) Serial.print(" standstill");
-      Serial.println(" ");
+        //show REG_DRVSTATUS
+        s = tmc_read(REG_DRVSTATUS, &data);
+        Serial.print("DRVSTATUS: 0x");
+        Serial.print(data, HEX);
+        Serial.print("\t - ");
+        Serial.print("Status: 0x");
+        Serial.print(s, HEX);
+        if(s & 0x01) Serial.print(" reset");
+        if(s & 0x02) Serial.print(" error");
+        if(s & 0x04) Serial.print(" sg2");
+        if(s & 0x08) Serial.print(" standstill");
+        Serial.println(" ");
 
 
-      reading = digitalRead(DIR_PIN);
+        reading = digitalRead(DIR_PIN);
+      }
+      digitalWrite(STEP_PIN, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(STEP_PIN, LOW);
+      delayMicroseconds(10);
+      //s = tmc_read(REG_DRVSTATUS, &data);
+      //if(s & 0x08) Serial.print(" standstill");
     }
-    digitalWrite(STEP_PIN, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(STEP_PIN, LOW);
-    delayMicroseconds(10);
-    //s = tmc_read(REG_DRVSTATUS, &data);
-    //if(s & 0x08) Serial.print(" standstill");
-  }
+}
+
+void Flower::continueUntilStall(){
+  
 }
 
 void Flower::open(){
