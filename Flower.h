@@ -21,7 +21,6 @@ class Flower
     void open(int percentage);
     void close();
     void setDir(bool open);
-    void report();
     void enableFunction(bool enable);
     void slowlyOpen();
     void slowlyClose();
@@ -39,6 +38,7 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
+    int _sensorpin;
     float _rate;
     uint32_t _lasttime;
     bool _function;
