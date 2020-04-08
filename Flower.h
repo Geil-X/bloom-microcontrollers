@@ -11,7 +11,7 @@ class Flower
 {
   public:
     Flower(int EN_PIN,int DIR_PIN,int STEP_PIN,int CS_PIN,int MOSI_PIN,int MISO_PIN,int SCK_PIN);
-    Flower(int DIR_PIN,int STEP_PIN,int MS1,int MS2,int SLP);
+    Flower(int DIR_PIN,int STEP_PIN,int MS1,int MS2,int SLP,const uint8_t& sensorpin);
     void setup();
     void step();
     void reverse();
@@ -24,7 +24,10 @@ class Flower
     void enableFunction(bool enable);
     void slowlyOpen();
     void slowlyClose();
-    void continueUntilStall();
+    static void continueUntilStall();
+    static void logSensorValue();
+    static void moveToCurrrentStep();
+    void recordStepSensorValue();
   private:
     int _enpin;
     int _dirpin;
@@ -38,11 +41,8 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
-    int _sensorpin;
-    float _rate;
     uint32_t _lasttime;
     bool _function;
-    
 };
 
 #endif
