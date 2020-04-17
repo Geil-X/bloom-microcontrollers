@@ -17,7 +17,10 @@ int _sensorpin;
 double _sensorvalue;
 bool _isrunning;
 float _rate;
-float _stepToSensorVal[5000] = {};
+float _stepToSensorVal[5000];
+float _lastSum;
+float _count;
+float _sum;
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_t& sensorpin) {
   _driver = 1;
@@ -30,8 +33,11 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_
   _slppin = SLP;
   _sensorpin = sensorpin;
   _dir = 1;
-  _rate = 10;
+  _rate = 30;
   _function = false;
+  _lastSum = 0;
+  _count = 0;
+  _sum = 0;
   _sensorvalue = 0;
   _isrunning = false;
   stepper.customSet(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
@@ -44,25 +50,67 @@ void Flower::setup() {
   stepper.setMicrostepping(3);
   stepper.setSpeedRPM(_rate);
   Serial.begin(9600);
-  //myTimer.begin(logSensorValue, 200000);
+  myTimer.begin(logSensorValue, 200000);
 }
 
 void Flower::logSensorValue(){
-  Serial.println(_isrunning);
   if(_isrunning){
-    if(analogRead(_sensorpin) < _stepToSensorVal[current_step] *0.8 ){  //(60 /5* 5.68*0.6)
-      Serial.println("Stall Detected");
-      continueUntilStall();
-      moveToCurrrentStep();
+   
+    float tmp = analogRead(_sensorpin);
+    if(_count <5){
+      _count += 1;
+      _sum += tmp;
+    }else{
+      if(_lastSum == 0){
+        _lastSum = _sum;
+      }else{
+        if(abs(_lastSum - _sum )>20 && abs(tmp - _stepToSensorVal[current_step])> 100 ){
+          Serial.println("Stall Detected");
+          Serial.print(tmp);
+          Serial.print(" ");
+          Serial.print(current_step);
+          Serial.print(" ");
+          Serial.print(_stepToSensorVal[current_step]);
+          Serial.print(" ");
+          Serial.print(_lastSum/5);
+          Serial.print(" ");
+          Serial.println(_sum/5);
+          //_isrunning = false;
+          //stepper.setSpeedRPM(20);
+          //continueUntilStall();
+          //Serial.println("Stalled, stop");
+          //delay(5000);
+          //moveToCurrrentStep();
+          //Serial.println("Recovered");
+          //delay(5000);
+          //stepper.setSpeedRPM(_rate);
+          //Serial.println("Recovered");
+          //_isrunning = true;
+        }
+      }
+      _count = 0;
     }
+    /*if(abs(tmp - _stepToSensorVal[current_step] )> 200 ){  //(60 /5* 5.68*0.6)
+      Serial.println("Stall Detected");
+      Serial.print(tmp);
+    Serial.print(" ");
+    Serial.print(current_step);
+    Serial.print(" ");
+    Serial.println(_stepToSensorVal[current_step]);
+      //continueUntilStall();
+      //moveToCurrrentStep();
+    }*/
   }
-  Serial.println(analogRead(_sensorpin));
+  
 }
 
 void Flower::moveToCurrrentStep(){
-  for (int i=0;i<current_step;i++){
-    stepper.move(1);
+  Serial.println(current_step);
+  for (int i=0;i< current_step;i++){
+    stepper.move(-1);
   }
+  
+  
 }
 void Flower::step() {
   if (_function) {
@@ -114,7 +162,6 @@ void Flower::enableFunction(bool enable) {
   }
 }
 
-
 void Flower::reverse() {
   _dir = 1 - _dir;
   digitalWrite(_dirpin, _dir);
@@ -134,7 +181,9 @@ void Flower::home() {
 
   while (true) {
     if (count > 20) {
-      if (abs(sum / count - lastsum / count) < 4) {
+      
+      if (abs(sum  - lastsum ) < 80) {
+        Serial.println(sum  - lastsum);
         iscount += 1;
         if(iscount > 2){
           total_step = step / 2;
@@ -165,40 +214,45 @@ void Flower::home() {
   }
   recordStepSensorValue();
   for(int i=0;i<total_step;i++){
+    Serial.print(i);
+    Serial.print(" ");
     Serial.println(_stepToSensorVal[i]);
   }
   
 }
 
 void Flower::recordStepSensorValue(){
-  Serial.println("record");
   setDir(false);
-  setRate(5);
+  setRate(10);
   while (current_step < total_step) {
-    step();
     float temp = (float)analogRead(_sensorpin);
+    _stepToSensorVal[current_step] = temp;
+    Serial.print("record ");
     Serial.print(current_step);
     Serial.print(" ");
-    Serial.println(temp);
-    _stepToSensorVal[current_step] = temp;
+    Serial.println(_stepToSensorVal[current_step]);
+    step();
   }
+  float temp = (float)analogRead(_sensorpin);
+    _stepToSensorVal[current_step] = temp;
+    Serial.print("record ");
+    Serial.print(current_step);
+    Serial.print(" ");
+    Serial.println(_stepToSensorVal[current_step]);
 }
 
 void Flower::continueUntilStall() {
+Serial.println("Recovering");
  double sum = 0;
   double lastsum = 0;
   int count = 0;
   int dir = -1;
 
   while (true) {
-    if (count > 20) {
-      if (abs(sum / count - lastsum / count) < 3) {
-        if (dir == 1) {
-          dir = -1;
-        } else {
-          dir = 1;
-        }
-        stepper.move(dir * 20);
+    if (count > 5) {
+      if (abs(sum  - lastsum ) < 80) {
+        
+        stepper.move(-1*dir * 20);
         break;
       }
       count = 0;

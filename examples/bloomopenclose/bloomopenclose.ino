@@ -1,6 +1,6 @@
 
 #include "Flower.h"
-Flower flower(2,3,4,5,6);
+Flower flower(2,3,4,5,6, A9);
 int count = 0;
  bool startCount = false;
 void setup()
