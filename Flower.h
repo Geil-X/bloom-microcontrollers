@@ -6,6 +6,7 @@
 #define Flower_h
 
 #include "Arduino.h"
+#include <AH_EasyDriver.h>
 
 class Flower
 {
@@ -24,14 +25,15 @@ class Flower
     void enableFunction(bool enable);
     void slowlyOpen();
     void slowlyClose();
-    static void continueUntilStall();
-    static void logSensorValue();
-    static void moveToCurrrentStep();
+    static void continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin);
+    static void logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin);
+    static void moveToCurrrentStep(AH_EasyDriver stepper);
     void recordStepSensorValue();
-  private:
-    int _enpin;
+    
     int _dirpin;
     int _steppin;
+  private:
+  int _enpin;
     int _cspin;
     int _mosipin;
     int _misopin;
@@ -41,8 +43,10 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
+    int _sensorpin;
     uint32_t _lasttime;
     bool _function;
+    AH_EasyDriver stepper;
 };
 
 #endif

@@ -6,23 +6,26 @@
 #include "Arduino.h"
 #include "Flower.h"
 #include <AH_EasyDriver.h>
-   
 
-AH_EasyDriver stepper;
+
+
+//AH_EasyDriver stepper;
 long current_step = 0;
 long total_step = 1600;
 
 IntervalTimer myTimer;
-int _sensorpin;
-double _sensorvalue;
+//int _sensorpin;
 bool _isrunning;
 float _rate;
-float _stepToSensorVal[5000];
+float _stepToSensorVal[2000];
 float _lastSum;
 float _count;
 float _sum;
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_t& sensorpin) {
+  
+  
+  
   _driver = 1;
   //_enpin = EN_PIN;
   _dirpin = DIR_PIN;
@@ -31,29 +34,30 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_
   //_cspin = CS_PIN;
   _ms2pin = MS2;
   _slppin = SLP;
-  _sensorpin = sensorpin;
+  this->_sensorpin = sensorpin;
   _dir = 1;
   _rate = 30;
   _function = false;
   _lastSum = 0;
   _count = 0;
   _sum = 0;
-  _sensorvalue = 0;
   _isrunning = false;
-  stepper.customSet(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
+  
+  this->stepper = AH_EasyDriver(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
+  //this->stepper.customSet(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
 }
 
 
 void Flower::setup() {
   
-  stepper.sleepOFF();
-  stepper.setMicrostepping(3);
-  stepper.setSpeedRPM(_rate);
-  Serial.begin(9600);
-  myTimer.begin(logSensorValue, 200000);
+  this->stepper.sleepOFF();
+  this->stepper.setMicrostepping(3);
+  this->stepper.setSpeedRPM(_rate);
+  
+  //myTimer.begin(logSensorValue.bind(this->stepper), 200000);
 }
 
-void Flower::logSensorValue(){
+void Flower::logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin){
   if(_isrunning){
    
     float tmp = analogRead(_sensorpin);
@@ -76,14 +80,14 @@ void Flower::logSensorValue(){
           Serial.print(" ");
           Serial.println(_sum/5);
           //_isrunning = false;
-          //stepper.setSpeedRPM(20);
+          //this->stepper.setSpeedRPM(20);
           //continueUntilStall();
           //Serial.println("Stalled, stop");
           //delay(5000);
           //moveToCurrrentStep();
           //Serial.println("Recovered");
           //delay(5000);
-          //stepper.setSpeedRPM(_rate);
+          //this->stepper.setSpeedRPM(_rate);
           //Serial.println("Recovered");
           //_isrunning = true;
         }
@@ -104,7 +108,7 @@ void Flower::logSensorValue(){
   
 }
 
-void Flower::moveToCurrrentStep(){
+void Flower::moveToCurrrentStep(AH_EasyDriver stepper){
   Serial.println(current_step);
   for (int i=0;i< current_step;i++){
     stepper.move(-1);
@@ -115,18 +119,18 @@ void Flower::moveToCurrrentStep(){
 void Flower::step() {
   if (_function) {
     if (_dir == 0) {
-      stepper.move(-1);
+      this->stepper.move(-1);
       current_step += 1;
     } else {
-      stepper.move(1);
+      this->stepper.move(1);
       current_step -= 1;
     }
   } else {
     if (_dir == 0) {
-      stepper.move(-1);
+      this->stepper.move(-1);
       current_step += 1;
     } else {
-      stepper.move(1);
+      this->stepper.move(1);
       current_step -= 1;
     }
   }
@@ -168,7 +172,7 @@ void Flower::reverse() {
 }
 
 void Flower::setRate(int rate) {
-  stepper.setSpeedRPM(rate);
+  this->stepper.setSpeedRPM(rate);
 }
 void Flower::home() {
 
@@ -194,30 +198,30 @@ void Flower::home() {
         } else {
           dir = 1;
         }
-        stepper.move(dir * 100);
+        this->stepper.move(dir * 100);
         step += 80;
         delay(20);
       }
       count = 0;
       lastsum = sum;
-      sum = analogRead(_sensorpin);
+      sum = analogRead(this->_sensorpin);
     } else {
-      int temp = analogRead(_sensorpin);
+      int temp = analogRead(this->_sensorpin);
       sum += temp;
       count += 1;
     }
-    stepper.move(dir);
+    this->stepper.move(dir);
     if(iscount > 0){
       
       step ++;
     }
   }
   recordStepSensorValue();
-  for(int i=0;i<total_step;i++){
-    Serial.print(i);
-    Serial.print(" ");
-    Serial.println(_stepToSensorVal[i]);
-  }
+  //for(int i=0;i<total_step;i++){
+   // Serial.print(i);
+    //Serial.print(" ");
+    //Serial.println(_stepToSensorVal[i]);
+ // }_steppin
   
 }
 
@@ -225,23 +229,23 @@ void Flower::recordStepSensorValue(){
   setDir(false);
   setRate(10);
   while (current_step < total_step) {
-    float temp = (float)analogRead(_sensorpin);
+    float temp = (float)analogRead(this->_sensorpin);
     _stepToSensorVal[current_step] = temp;
-    Serial.print("record ");
-    Serial.print(current_step);
-    Serial.print(" ");
-    Serial.println(_stepToSensorVal[current_step]);
+    //Serial.print("record ");
+    //Serial.print(current_step);
+    //Serial.print(" ");
+    //Serial.println(_stepToSensorVal[current_step]);
     step();
   }
-  float temp = (float)analogRead(_sensorpin);
+  float temp = (float)analogRead(this->_sensorpin);
     _stepToSensorVal[current_step] = temp;
-    Serial.print("record ");
-    Serial.print(current_step);
-    Serial.print(" ");
-    Serial.println(_stepToSensorVal[current_step]);
+   // Serial.print("record ");
+   // Serial.print(current_step);
+   // Serial.print(" ");
+   // Serial.println(_stepToSensorVal[current_step]);
 }
 
-void Flower::continueUntilStall() {
+void Flower::continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin) {
 Serial.println("Recovering");
  double sum = 0;
   double lastsum = 0;
