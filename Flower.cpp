@@ -9,21 +9,16 @@
 
 
 
-//AH_EasyDriver stepper;
-long current_step = 0;
-long total_step = 1600;
-
 IntervalTimer myTimer;
 //int _sensorpin;
-bool _isrunning;
-float _rate;
-float _stepToSensorVal[2000];
-float _lastSum;
-float _count;
-float _sum;
+// bool _isrunning;
+// float _rate;
+// float _stepToSensorVal[2000];
+// float _lastSum;
+// float _count;
+// float _sum;
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_t& sensorpin) {
-  
   
   
   _driver = 1;
@@ -42,7 +37,8 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, int MS1, int MS2, int SLP,const uint8_
   _count = 0;
   _sum = 0;
   _isrunning = false;
-  
+  current_step = 0;
+  total_step = 1600;
   this->stepper = AH_EasyDriver(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
   //this->stepper.customSet(200, _dirpin, _steppin, _ms1pin, _ms2pin, _slppin);
 }
@@ -57,65 +53,65 @@ void Flower::setup() {
   //myTimer.begin(logSensorValue.bind(this->stepper), 200000);
 }
 
-void Flower::logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin){
-  if(_isrunning){
+// void Flower::logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin){
+//   if(_isrunning){
    
-    float tmp = analogRead(_sensorpin);
-    if(_count <5){
-      _count += 1;
-      _sum += tmp;
-    }else{
-      if(_lastSum == 0){
-        _lastSum = _sum;
-      }else{
-        if(abs(_lastSum - _sum )>20 && abs(tmp - _stepToSensorVal[current_step])> 100 ){
-          Serial.println("Stall Detected");
-          Serial.print(tmp);
-          Serial.print(" ");
-          Serial.print(current_step);
-          Serial.print(" ");
-          Serial.print(_stepToSensorVal[current_step]);
-          Serial.print(" ");
-          Serial.print(_lastSum/5);
-          Serial.print(" ");
-          Serial.println(_sum/5);
-          //_isrunning = false;
-          //this->stepper.setSpeedRPM(20);
-          //continueUntilStall();
-          //Serial.println("Stalled, stop");
-          //delay(5000);
-          //moveToCurrrentStep();
-          //Serial.println("Recovered");
-          //delay(5000);
-          //this->stepper.setSpeedRPM(_rate);
-          //Serial.println("Recovered");
-          //_isrunning = true;
-        }
-      }
-      _count = 0;
-    }
-    /*if(abs(tmp - _stepToSensorVal[current_step] )> 200 ){  //(60 /5* 5.68*0.6)
-      Serial.println("Stall Detected");
-      Serial.print(tmp);
-    Serial.print(" ");
-    Serial.print(current_step);
-    Serial.print(" ");
-    Serial.println(_stepToSensorVal[current_step]);
-      //continueUntilStall();
-      //moveToCurrrentStep();
-    }*/
-  }
+//     float tmp = analogRead(_sensorpin);
+//     if(_count <5){
+//       _count += 1;
+//       _sum += tmp;
+//     }else{
+//       if(_lastSum == 0){
+//         _lastSum = _sum;
+//       }else{
+//         if(abs(_lastSum - _sum )>20 && abs(tmp - _stepToSensorVal[current_step])> 100 ){
+//           Serial.println("Stall Detected");
+//           Serial.print(tmp);
+//           Serial.print(" ");
+//           Serial.print(current_step);
+//           Serial.print(" ");
+//           Serial.print(_stepToSensorVal[current_step]);
+//           Serial.print(" ");
+//           Serial.print(_lastSum/5);
+//           Serial.print(" ");
+//           Serial.println(_sum/5);
+//           //_isrunning = false;
+//           //this->stepper.setSpeedRPM(20);
+//           //continueUntilStall();
+//           //Serial.println("Stalled, stop");
+//           //delay(5000);
+//           //moveToCurrrentStep();
+//           //Serial.println("Recovered");
+//           //delay(5000);
+//           //this->stepper.setSpeedRPM(_rate);
+//           //Serial.println("Recovered");
+//           //_isrunning = true;
+//         }
+//       }
+//       _count = 0;
+//     }
+//     /*if(abs(tmp - _stepToSensorVal[current_step] )> 200 ){  //(60 /5* 5.68*0.6)
+//       Serial.println("Stall Detected");
+//       Serial.print(tmp);
+//     Serial.print(" ");
+//     Serial.print(current_step);
+//     Serial.print(" ");
+//     Serial.println(_stepToSensorVal[current_step]);
+//       //continueUntilStall();
+//       //moveToCurrrentStep();
+//     }*/
+//   }
   
-}
+// }
 
-void Flower::moveToCurrrentStep(AH_EasyDriver stepper){
-  Serial.println(current_step);
-  for (int i=0;i< current_step;i++){
-    stepper.move(-1);
-  }
+// void Flower::moveToCurrrentStep(AH_EasyDriver stepper){
+//   Serial.println(current_step);
+//   for (int i=0;i< current_step;i++){
+//     stepper.move(-1);
+//   }
   
   
-}
+// }
 void Flower::step() {
   if (_function) {
     if (_dir == 0) {
@@ -245,32 +241,32 @@ void Flower::recordStepSensorValue(){
    // Serial.println(_stepToSensorVal[current_step]);
 }
 
-void Flower::continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin) {
-Serial.println("Recovering");
- double sum = 0;
-  double lastsum = 0;
-  int count = 0;
-  int dir = -1;
+// void Flower::continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin) {
+// Serial.println("Recovering");
+//  double sum = 0;
+//   double lastsum = 0;
+//   int count = 0;
+//   int dir = -1;
 
-  while (true) {
-    if (count > 5) {
-      if (abs(sum  - lastsum ) < 80) {
+//   while (true) {
+//     if (count > 5) {
+//       if (abs(sum  - lastsum ) < 80) {
         
-        stepper.move(-1*dir * 20);
-        break;
-      }
-      count = 0;
-      lastsum = sum;
-      sum = analogRead(_sensorpin);
-    } else {
-      int temp = analogRead(_sensorpin);
-      sum += temp;
-      count += 1;
-    }
-    stepper.move(dir);
-  }
+//         stepper.move(-1*dir * 20);
+//         break;
+//       }
+//       count = 0;
+//       lastsum = sum;
+//       sum = analogRead(_sensorpin);
+//     } else {
+//       int temp = analogRead(_sensorpin);
+//       sum += temp;
+//       count += 1;
+//     }
+//     stepper.move(dir);
+//   }
 
-}
+// }
 
 void Flower::open() {
   _isrunning = true;
@@ -290,7 +286,7 @@ void Flower::close() {
   _isrunning = false;
 }
 
-void Flower::open(int percentage) {
+int Flower::open(int percentage) {
   _isrunning = true;
   long target = (long) total_step * percentage / 100;
   if (current_step < target) {
@@ -305,6 +301,7 @@ void Flower::open(int percentage) {
     }
   }
   _isrunning = false; 
+  return percentage;
 }
 
 void Flower::setDir(bool open) {

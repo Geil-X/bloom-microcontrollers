@@ -19,15 +19,15 @@ class Flower
     void setRate(int rate);
     void home();
     void open();
-    void open(int percentage);
+    int open(int percentage);
     void close();
     void setDir(bool open);
     void enableFunction(bool enable);
     void slowlyOpen();
     void slowlyClose();
-    static void continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin);
-    static void logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin);
-    static void moveToCurrrentStep(AH_EasyDriver stepper);
+    //static void continueUntilStall(AH_EasyDriver stepper,const uint8_t& _sensorpin);
+    //static void logSensorValue(AH_EasyDriver stepper,const uint8_t& _sensorpin);
+    //static void moveToCurrrentStep(AH_EasyDriver stepper);
     void recordStepSensorValue();
     
     int _dirpin;
@@ -47,6 +47,14 @@ class Flower
     uint32_t _lasttime;
     bool _function;
     AH_EasyDriver stepper;
+    long current_step;
+    long total_step;
+    bool _isrunning;
+    float _rate;
+    float _stepToSensorVal[2000];
+    float _lastSum;
+    float _count;
+    float _sum;
 };
 
 #endif
