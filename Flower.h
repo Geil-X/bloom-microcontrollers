@@ -11,7 +11,7 @@
 class Flower
 {
   public:
-    Flower(int DIR_PIN,int STEP_PIN,int MS1,int MS2,int SLP,const uint8_t& sensorpin);
+
     Flower(int DIR_PIN,int STEP_PIN,const uint8_t& sensorpin);
     void setup();
     void step();
@@ -23,8 +23,7 @@ class Flower
     int open(int percentage);
     void close();
     void setDir(bool open);
-    void slowlyOpen();
-    void slowlyClose();
+
     void recordStepSensorValue();
     
     int _dirpin;

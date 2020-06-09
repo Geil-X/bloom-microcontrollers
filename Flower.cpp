@@ -23,24 +23,10 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
   total_step = 1600;
 }
 
-Flower::Flower(int DIR_PIN,int STEP_PIN,int MS1,int MS2,int SLP,const uint8_t& sensorpin){
-  _dirpin = DIR_PIN;
-  _steppin = STEP_PIN;
-  //Stepper stepper(_steppin, _dirpin);
-  _sensorpin = sensorpin;
-  _dir = 1;
-  _rate = 30;
-  _lastSum = 0;
-  _count = 0;
-  _sum = 0;
-  _isrunning = false;
-  current_step = 0;
-  total_step = 1600;
-}
 void Flower::setup() {
   
-  stepper.setMaxSpeed(50000)             // stp/s
-        .setAcceleration(200000);
+  stepper.setMaxSpeed(10000)             // stp/s
+        .setAcceleration(50000);
 }
 
 void Flower::step() {
@@ -63,27 +49,6 @@ void Flower::step(int steps) {
     }
 }
 
-void Flower::slowlyOpen() {
-  _isrunning = true;
-  setDir(true);
-  while (current_step > 0) {
-    setRate((int) current_step / 1600.0 * 90.0 + 10);
-    step();
-  }
-  setRate(10);
-  _isrunning = false;
-}
-
-void Flower::slowlyClose() {
-  _isrunning = true;
-  setDir(false);
-  while (current_step < total_step) {
-    setRate((int) current_step / 1600.0 * 90.0 + 10);
-    step();
-  }
-  setRate(10);
-  _isrunning = false;
-}
 
 
 void Flower::reverse() {
@@ -105,7 +70,8 @@ void Flower::home() {
 
   while (true) {
 
-    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 40) {
+    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 10) {
+      Serial.println( abs(sum  - lastsum ));
       iscount += 1;
       if(iscount > 2){
         total_step = step / 2;
@@ -116,17 +82,20 @@ void Flower::home() {
       } else {
         dir = 1;
       }
-      stepper.setTargetRel(dir * 100);
+      stepper.setTargetRel(dir * 25);
       controller.move(stepper);
-      delay(500 );
+      delay(500);
      
     }
     
-    lastsum =  analogRead(A9);
-    stepper.setTargetRel(dir*100);
+    lastsum =  analogRead(_sensorpin);
+    stepper.setTargetRel(dir*50);
     controller.move(stepper);
-    step +=50;
-    sum = analogRead(A9);
+    if(iscount > 0){
+      step +=50;
+    }
+    
+    sum = analogRead(_sensorpin);
   }
 }
 
