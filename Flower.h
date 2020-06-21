@@ -11,7 +11,7 @@
 class Flower
 {
   public:
-
+    Flower();
     Flower(int DIR_PIN,int STEP_PIN,const uint8_t& sensorpin);
     void setup();
     void step();

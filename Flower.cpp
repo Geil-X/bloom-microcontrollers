@@ -6,6 +6,9 @@
 #include "Arduino.h"
 #include "Flower.h"
 #include "TeensyStep.h"
+Flower::Flower(){
+
+}
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
   _dirpin = DIR_PIN;
@@ -24,7 +27,6 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
 }
 
 void Flower::setup() {
-  
   stepper.setMaxSpeed(10000)             // stp/s
         .setAcceleration(50000);
 }
@@ -49,14 +51,13 @@ void Flower::step(int steps) {
     }
 }
 
-
-
 void Flower::reverse() {
   _dir = 1 - _dir;
 }
 
 void Flower::setRate(int rate) {
-  //stepper.setSpeedRPM(rate);
+  stepper.setMaxSpeed(rate)             // stp/s
+        .setAcceleration(5*rate);
 }
 
 void Flower::home() {
@@ -102,7 +103,7 @@ void Flower::home() {
 void Flower::open() {
   _isrunning = true;
   stepper.setTargetRel(current_step);
-  controller.move(stepper);
+  controller.move(stepper); 
   current_step = 0;
   _isrunning = false;
 }

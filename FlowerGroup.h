@@ -7,16 +7,23 @@
 
 #include "Arduino.h"
 #include "Flower.h"
+#include "TeensyStep.h"
 
 class FlowerGroup
 {
   public:
     FlowerGroup();
     void setup();
-    void addStepper();
+    void addStepper(Flower& flower);
     void clear();
-    void move();
- 
+    void moveAbs(int target);
+    void move(int target);
+    Flower* flowers[10];
+    int totalFlower;
+    int workingFlowers;
+    
+    int working[10]= {0,0,0,0,0,0,0,0,0,0};
+    StepControl controller;
 };
 
 #endif
