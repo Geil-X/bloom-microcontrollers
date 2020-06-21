@@ -56,5 +56,5 @@ void FlowerGroup::move(int target){
         }
     }
     //TODO:Need to fix the variable match in the function
-    controller.move(&workingMotors[0], &workingMotors[1]);
+    controller.move(*workingMotors[0], *workingMotors[1]);
 }
