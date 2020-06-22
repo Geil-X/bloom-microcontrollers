@@ -72,7 +72,7 @@ void Flower::home() {
   while (true) {
 
     if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 10) {
-      Serial.println( abs(sum  - lastsum ));
+    
       iscount += 1;
       if(iscount > 2){
         total_step = step / 2;

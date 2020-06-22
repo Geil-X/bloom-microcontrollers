@@ -13,9 +13,11 @@ void FlowerGroup::addStepper(Flower& flower){
     working[totalFlower] = 1;
     workingFlowers++;
     totalFlower++;
+    Serial.println(totalFlower);
 }
 
 void FlowerGroup::setup(){
+    Serial.println(totalFlower);
     for(int i=0; i<totalFlower; i++){
         flowers[i]->setup();
         flowers[i]->home();
@@ -35,13 +37,33 @@ void FlowerGroup::moveAbs(int target){
     for(int i=0; i<totalFlower; i++){
         
         if(working[i] == 1){
-            Serial.println(flowers[i]->stepper.getPosition());
             flowers[i]->stepper.setTargetAbs(target);
             workingMotors[count] = &flowers[i]->stepper;
             count ++;
         }
     }
-    controller.move(*workingMotors[0], *workingMotors[1]);
+    if(count == 1){
+        controller.move(*workingMotors[0]);
+    }else if(count == 2){
+        controller.move(*workingMotors[0],*workingMotors[1]);
+    }else if (count == 3){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2]);
+    }else if (count == 4){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3]);
+    }else if (count == 5){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4]);
+    }else if (count == 6){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5]);
+    }else if (count ==7){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6]);
+    }else if (count == 8){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7]);
+    }else if (count ==9){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7],*workingMotors[8]);
+    }else if (count == 10){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7],*workingMotors[8],*workingMotors[9]);
+    }
+    
 }
 
 void FlowerGroup::move(int target){
@@ -56,5 +78,25 @@ void FlowerGroup::move(int target){
         }
     }
     //TODO:Need to fix the variable match in the function
-    controller.move(*workingMotors[0], *workingMotors[1]);
+    if(count == 1){
+        controller.move(*workingMotors[0]);
+    }else if(count == 2){
+        controller.move(*workingMotors[0],*workingMotors[1]);
+    }else if (count == 3){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2]);
+    }else if (count == 4){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3]);
+    }else if (count == 5){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4]);
+    }else if (count == 6){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5]);
+    }else if (count ==7){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6]);
+    }else if (count == 8){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7]);
+    }else if (count ==9){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7],*workingMotors[8]);
+    }else if (count == 10){
+        controller.move(*workingMotors[0],*workingMotors[1],*workingMotors[2],*workingMotors[3],*workingMotors[4],*workingMotors[5],*workingMotors[6],*workingMotors[7],*workingMotors[8],*workingMotors[9]);
+    }
 }
