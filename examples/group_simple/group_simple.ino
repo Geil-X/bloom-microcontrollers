@@ -11,15 +11,20 @@ void setup()
     group.addStepper(flower1);
     group.addStepper(flower2);
     group.addStepper(flower3);
-    Serial.println(group.totalFlower);
+    //Serial.println(group.totalFlower);
     group.setup();
-    group.moveAbs(0); // Move to Abs pos 0
+    //group.moveAbs(0); // Move to Abs pos 0
+    //group._isrunning = true;
 }
 
 void loop()
 {
-  for(int i=0;i<100;i+=10){
+  for(int i=0;i<105;i+=5){
     group.move(i); //Move to i percent position
-    delay(50);
+    delay(20);
+  }
+  for(int i=100;i>0;i-=5){
+    group.move(i); //Move to i percent position
+    delay(20);
   }
 }

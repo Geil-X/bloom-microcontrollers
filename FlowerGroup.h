@@ -14,16 +14,20 @@ class FlowerGroup
   public:
     FlowerGroup();
     void setup();
+    void recordSensorVal();
     void addStepper(Flower& flower);
     void clear();
     void moveAbs(int target);
     void move(int target);
-    Flower* flowers[10];
-    int totalFlower;
-    int workingFlowers;
     
-    int working[10]= {0,0,0,0,0,0,0,0,0,0};
-    StepControl controller;
+
+    float getSensorVal(Flower* f);
+    static void checkStall();
+
+    bool isRunning();
+
+    
+
 };
 
 #endif

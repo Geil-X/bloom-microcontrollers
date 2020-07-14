@@ -25,12 +25,16 @@ class Flower
     void setDir(bool open);
 
     void recordStepSensorValue();
+    void moveUntilStall();
     
     int _dirpin;
     int _steppin;
     Stepper stepper;
     StepControl controller;
-    long total_step;
+    int total_step;
+    int _sensorpin;
+    int current_step;
+
   private:
   int _enpin;
     int _cspin;
@@ -42,9 +46,9 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
-    int _sensorpin;
+    
     uint32_t _lasttime;
-    long current_step;
+    
     
     bool _isrunning;
     float _rate;
