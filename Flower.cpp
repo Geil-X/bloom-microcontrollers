@@ -29,8 +29,14 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
 }
 
 void Flower::setup() {
-  stepper.setMaxSpeed(10000)             // stp/s
-        .setAcceleration(50000);
+  stepper.setMaxSpeed(50000)             // stp/s
+        .setAcceleration(200000);
+}
+
+void Flower::setRate(int rate){
+  //Motor Speed range 1 - 300000, 
+  //accel range  0 - 500000
+  stepper.setMaxSpeed(rate).setAcceleration(int(rate / 3.0 * 5));
 }
 
 void Flower::step() {
@@ -57,11 +63,6 @@ void Flower::reverse() {
   _dir = 1 - _dir;
 }
 
-void Flower::setRate(int rate) {
-  stepper.setMaxSpeed(rate)             // stp/s
-        .setAcceleration(5*rate);
-}
-
 void Flower::moveUntilStall(){
   double sum = 0;
   double lastsum = 0;
@@ -70,7 +71,8 @@ void Flower::moveUntilStall(){
   int step = 0;
   while(true){
     if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 10) {
-      break;
+      Serial.println("finished");
+      return;
     }
     lastsum =  analogRead(_sensorpin);
     stepper.setTargetRel(dir*50);
@@ -89,7 +91,7 @@ void Flower::home() {
   int iscount = 0;
   int step = 0;
   while (true) {
-    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 10) {
+    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 8) {
       iscount += 1;
       if(iscount > 2){
         total_step = step / 2;
