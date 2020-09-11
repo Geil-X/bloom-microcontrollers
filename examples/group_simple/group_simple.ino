@@ -11,8 +11,8 @@ void setup()
     group.addStepper(flower1);
     group.addStepper(flower2);
     //group.addStepper(flower3);
-    //Serial.println(group.totalFlower);
     group.setup();
+    group.setThrehold(0,8,40,40) // int flower id, int stall_threhold, int boundry_offset, int stall_detection_move_block
     //group.moveAbs(0); // Move to Abs pos 0
     //group._isrunning = true;
 }
