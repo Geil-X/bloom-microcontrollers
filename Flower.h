@@ -23,6 +23,7 @@ class Flower
     int open(int percentage);
     void close();
     void setDir(bool open);
+    void setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block);
 
     void recordStepSensorValue();
     void moveUntilStall();
@@ -36,7 +37,10 @@ class Flower
     int current_step;
 
   private:
-  int _enpin;
+    int _stall_threhold;
+    int _boundry_offset;
+    int _stall_detection_move_block;
+    int _enpin;
     int _cspin;
     int _mosipin;
     int _misopin;

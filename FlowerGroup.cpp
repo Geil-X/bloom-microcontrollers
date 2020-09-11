@@ -23,6 +23,12 @@ bool FlowerGroup::isRunning(){
     return _isrunning;
 }
 
+void FlowerGroup::setThrehold(int flowerid, int stall_threhold, int boundry_offset, int stall_detection_move_block){
+    if(flowerid >=0 && flowerid < 10){
+        flowers[flowerid]->setupThrehold(stall_threhold,boundry_offset,stall_detection_move_block);
+    }
+}
+
 FlowerGroup::FlowerGroup(){
     totalFlower = 0;
     workingFlowers = 0;

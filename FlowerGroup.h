@@ -19,6 +19,7 @@ class FlowerGroup
     void clear();
     void moveAbs(int target);
     void move(int target);
+    void setThrehold(int flowerid, int stall_threhold, int boundry_offset, int stall_detection_move_block);
     
 
     float getSensorVal(Flower* f);

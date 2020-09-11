@@ -8,15 +8,21 @@
 #include "TeensyStep.h"
 #include <TeensyThreads.h>
 
-Flower::Flower(){
+const int INIT_TOTAL_STEP = 1600;
+const long INIT_STEP_PER_SEC = 50000;
+const long INIT_ACCEL = 200000;
 
-}
+const int STALL_THREHOLD = 8;
+const int BOUNDRY_OFFSET = 40;
+const int STALL_DETECTION_MOVE_BLOCK = 40;
+
+
+Flower::Flower(){}
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
   _dirpin = DIR_PIN;
   _steppin = STEP_PIN;
   stepper.setup(_steppin, _dirpin);
-  //Stepper stepper(_steppin, _dirpin);
   _sensorpin = sensorpin;
   _dir = 1;
   _rate = 30;
@@ -25,12 +31,21 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
   _sum = 0;
   _isrunning = false;
   this->current_step = 0;
-  total_step = 1600;
+  total_step = INIT_TOTAL_STEP;
+  _stall_threhold = STALL_THREHOLD;
+  _boundry_offset = BOUNDRY_OFFSET;
+  _stall_detection_move_block = STALL_DETECTION_MOVE_BLOCK;
+}
+
+void Flower::setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block){
+  _stall_threhold = stall_threhold;
+  _boundry_offset = boundry_offset;
+  _stall_detection_move_block = stall_detection_move_block;
 }
 
 void Flower::setup() {
-  stepper.setMaxSpeed(50000)             // stp/s
-        .setAcceleration(200000);
+  stepper.setMaxSpeed(INIT_STEP_PER_SEC)       // stp/s
+        .setAcceleration(INIT_STEP_PER_SEC);
 }
 
 void Flower::setRate(int rate){
@@ -70,15 +85,15 @@ void Flower::moveUntilStall(){
   int iscount = 0;
   int step = 0;
   while(true){
-    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 10) {
+    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < _stall_threhold) {
       Serial.println("finished");
       return;
     }
     lastsum =  analogRead(_sensorpin);
-    stepper.setTargetRel(dir*50);
+    stepper.setTargetRel(dir*_stall_detection_move_block);
     controller.move(stepper);
     if(iscount > 0){
-      step += 50;
+      step += _stall_detection_move_block;
     }
     sum = analogRead(_sensorpin);
   }
@@ -91,7 +106,7 @@ void Flower::home() {
   int iscount = 0;
   int step = 0;
   while (true) {
-    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < 8) {
+    if ((sum -lastsum != 0) && abs(sum  - lastsum ) < _stall_threhold) {
       iscount += 1;
       if(iscount > 2){
         total_step = step / 2;
@@ -102,16 +117,16 @@ void Flower::home() {
       } else {
         dir = 1;
       }
-      stepper.setTargetRel(dir * 50);
+      stepper.setTargetRel(dir * _boundry_offset);
       controller.move(stepper);
       delay(500);
      
     }
     lastsum =  analogRead(_sensorpin);
-    stepper.setTargetRel(dir*40);
+    stepper.setTargetRel(dir*_stall_detection_move_block);
     controller.move(stepper);
     if(iscount > 0){
-      step +=40;
+      step += _stall_detection_move_block;
     }
     
     sum = analogRead(_sensorpin);
