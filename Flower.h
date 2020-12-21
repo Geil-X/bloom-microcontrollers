@@ -12,7 +12,7 @@ class Flower
 {
   public:
     Flower();
-    Flower(int DIR_PIN,int STEP_PIN,const uint8_t& sensorpin);
+    Flower(int DIR_PIN,int STEP_PIN,int sensorpin);
     void setup();
     void step();
     void step(int steps);
@@ -27,6 +27,7 @@ class Flower
 
     void recordStepSensorValue();
     void moveUntilStall();
+    void stat();
     
     int _dirpin;
     int _steppin;

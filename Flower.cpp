@@ -19,7 +19,7 @@ const int STALL_DETECTION_MOVE_BLOCK = 40;
 
 Flower::Flower(){}
 
-Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
+Flower::Flower(int DIR_PIN, int STEP_PIN, int sensorpin){
   _dirpin = DIR_PIN;
   _steppin = STEP_PIN;
   stepper.setup(_steppin, _dirpin);
@@ -35,6 +35,15 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, const uint8_t& sensorpin){
   _stall_threhold = STALL_THREHOLD;
   _boundry_offset = BOUNDRY_OFFSET;
   _stall_detection_move_block = STALL_DETECTION_MOVE_BLOCK;
+}
+
+void Flower::stat(){
+  Serial.print("Sensor Pin: ");
+  Serial.print(_sensorpin);
+  Serial.print(" Dir Pin: ");
+  Serial.print(_dirpin);
+  Serial.print(" step pin: ");
+  Serial.println(_steppin);
 }
 
 void Flower::setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block){
