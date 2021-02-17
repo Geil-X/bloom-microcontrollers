@@ -68,6 +68,16 @@ void loop()
         group.forceStop();
       }else if (commandName == "RESET"){
         group.reset();
+      }else if (commandName == "THREHOLD"){
+        int secondSpaceIndex = commandValue.indexOf(' ', spaceIndex + 1);
+          String commandValues = commandValue.substring(spaceIndex + 1);
+          int thirdSpaceIndex = commandValue.indexOf(' ', secondSpaceIndex + 1);
+          String commandValues2 = commandValue.substring(secondSpaceIndex + 1);
+          String commandValues3 = commandValue.substring(thirdSpaceIndex + 1);
+          int fourSpaceIndex = commandValue.indexOf(' ', thirdSpaceIndex + 1);
+          String commandValues4 = commandValue.substring(fourSpaceIndex + 1);
+          Serial.println(commandValues + " " +commandValues2 + " " +  commandValues3 + " " + commandValues4);
+          group.setThrehold(commandValues.toInt(), commandValues2.toInt(),commandValues3.toInt(), commandValues4.toInt());
       }
     }
 }
@@ -99,4 +109,3 @@ int* parseNumbers(String s){
   number[count+1] = value;
   return number;
 }
-
