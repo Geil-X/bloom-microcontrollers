@@ -6,29 +6,42 @@
 #define Flower_h
 
 #include "Arduino.h"
+#include "TeensyStep.h"
 
 class Flower
 {
   public:
-    Flower(int EN_PIN,int DIR_PIN,int STEP_PIN,int CS_PIN,int MOSI_PIN,int MISO_PIN,int SCK_PIN);
-    Flower(int DIR_PIN,int STEP_PIN,int MS1,int MS2,int SLP);
+    Flower();
+    Flower(int DIR_PIN,int STEP_PIN,int sensorpin);
     void setup();
     void step();
+    void step(int steps);
     void reverse();
     void setRate(int rate);
     void home();
     void open();
-    void open(int percentage);
+    int open(int percentage);
     void close();
     void setDir(bool open);
-    void report();
-    void enableFunction(bool enable);
-    void slowlyOpen();
-    void slowlyClose();
-  private:
-    int _enpin;
+    void setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block);
+
+    void recordStepSensorValue();
+    void moveUntilStall();
+    void stat();
+    
     int _dirpin;
     int _steppin;
+    Stepper stepper;
+    StepControl controller;
+    int total_step;
+    int _sensorpin;
+    int current_step;
+
+  private:
+    int _stall_threhold;
+    int _boundry_offset;
+    int _stall_detection_move_block;
+    int _enpin;
     int _cspin;
     int _mosipin;
     int _misopin;
@@ -38,10 +51,16 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
-    float _rate;
-    uint32_t _lasttime;
-    bool _function;
     
+    uint32_t _lasttime;
+    
+    
+    bool _isrunning;
+    float _rate;
+    float _stepToSensorVal[2000];
+    float _lastSum;
+    float _count;
+    float _sum;
 };
 
 #endif
