@@ -8,27 +8,42 @@
 #include "Arduino.h"
 #include "TeensyStep.h"
 
-class Flower
-{
-  public:
+class Flower {
+public:
     Flower();
-    Flower(int DIR_PIN,int STEP_PIN,int sensorpin);
+
+    Flower(int DIR_PIN, int STEP_PIN, int sensorpin);
+
     void setup();
+
     void step();
+
     void step(int steps);
+
     void reverse();
+
     void setRate(int rate);
+
     void home();
+
     void open();
+
     int open(int percentage);
+
     void close();
+
     void setDir(bool open);
+
     void setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block);
 
     void recordStepSensorValue();
+
     void moveUntilStall();
+
     void stat();
-    
+
+    bool operator==(Flower &other) const;
+
     int _dirpin;
     int _steppin;
     Stepper stepper;
@@ -37,7 +52,7 @@ class Flower
     int _sensorpin;
     int current_step;
 
-  private:
+private:
     int _stall_threhold;
     int _boundry_offset;
     int _stall_detection_move_block;
@@ -51,10 +66,10 @@ class Flower
     int _slppin;
     int _dir;
     int _driver;
-    
+
     uint32_t _lasttime;
-    
-    
+
+
     bool _isrunning;
     float _rate;
     float _stepToSensorVal[2000];
