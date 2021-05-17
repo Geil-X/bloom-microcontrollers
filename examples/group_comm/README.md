@@ -60,3 +60,13 @@
         * 0 -> 200
     * `stall_detection_move_block`:
         * 0 -> 100
+
+* Set the speed of all the motors in steps per second
+  ```
+  SPEED <speed>
+  ```
+ 
+* Set the acceleration of all the motors in steps per second squared
+  ```
+  ACCELERATION <acceleration>
+  ```

@@ -22,7 +22,11 @@ public:
 
     void reverse();
 
-    void setRate(int rate);
+    void setSpeed(int speed);
+
+    void setAcceleration(int acceleration);
+
+    void setRate(int speed, int acceleration);
 
     void home();
 
@@ -34,7 +38,7 @@ public:
 
     void setDir(bool open);
 
-    void setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block);
+    void setupThreshold(int stall_threshold, int boundary_offset, int stall_detection_move_block);
 
     void recordStepSensorValue();
 
@@ -44,17 +48,17 @@ public:
 
     bool operator==(Flower &other) const;
 
-    int _dirpin;
-    int _steppin;
+    int _dir_pin;
+    int _step_pin;
     Stepper stepper;
     StepControl controller;
     int total_step;
-    int _sensorpin;
+    int _sensor_pin;
     int current_step;
 
 private:
-    int _stall_threhold;
-    int _boundry_offset;
+    int _stall_threshold;
+    int _boundary_offset;
     int _stall_detection_move_block;
     int _enpin;
     int _cspin;

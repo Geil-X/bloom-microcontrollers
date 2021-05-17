@@ -9,21 +9,21 @@
 #include <TeensyThreads.h>
 
 const int INIT_TOTAL_STEP = 1600;
-const long INIT_STEP_PER_SEC = 50000;
-const long INIT_ACCEL = 200000;
+const long INIT_STEP_PER_SEC = 50000; // Steps / second
+const long INIT_ACCELERATION = 50000;        // Steps / second^2
 
-const int STALL_THREHOLD = 7;
-const int BOUNDRY_OFFSET = 100;
+const int STALL_THRESHOLD = 7;
+const int BOUNDARY_OFFSET = 100;
 const int STALL_DETECTION_MOVE_BLOCK = 100;
 
 
 Flower::Flower() {}
 
 Flower::Flower(int DIR_PIN, int STEP_PIN, int sensorpin) {
-    _dirpin = DIR_PIN;
-    _steppin = STEP_PIN;
-    stepper.setup(_steppin, _dirpin);
-    _sensorpin = sensorpin;
+    _dir_pin = DIR_PIN;
+    _step_pin = STEP_PIN;
+    stepper.setup(_step_pin, _dir_pin);
+    _sensor_pin = sensorpin;
     _dir = 1;
     _rate = 10;
     _lastSum = 0;
@@ -32,35 +32,51 @@ Flower::Flower(int DIR_PIN, int STEP_PIN, int sensorpin) {
     _isrunning = false;
     this->current_step = 0;
     total_step = INIT_TOTAL_STEP;
-    _stall_threhold = STALL_THREHOLD;
-    _boundry_offset = BOUNDRY_OFFSET;
+    _stall_threshold = STALL_THRESHOLD;
+    _boundary_offset = BOUNDARY_OFFSET;
     _stall_detection_move_block = STALL_DETECTION_MOVE_BLOCK;
 }
 
 void Flower::stat() {
     Serial.print("Sensor Pin: ");
-    Serial.print(_sensorpin);
+    Serial.print(_sensor_pin);
     Serial.print(" Dir Pin: ");
-    Serial.print(_dirpin);
+    Serial.print(_dir_pin);
     Serial.print(" step pin: ");
-    Serial.println(_steppin);
+    Serial.println(_step_pin);
 }
 
-void Flower::setupThrehold(int stall_threhold, int boundry_offset, int stall_detection_move_block) {
-    _stall_threhold = stall_threhold;
-    _boundry_offset = boundry_offset;
+void Flower::setupThreshold(int stall_threshold, int boundary_offset, int stall_detection_move_block) {
+    _stall_threshold = stall_threshold;
+    _boundary_offset = boundary_offset;
     _stall_detection_move_block = stall_detection_move_block;
 }
 
 void Flower::setup() {
-    stepper.setMaxSpeed(INIT_STEP_PER_SEC)       // stp/s
-            .setAcceleration(INIT_STEP_PER_SEC);
+    setRate(INIT_STEP_PER_SEC, INIT_ACCELERATION);
 }
 
-void Flower::setRate(int rate) {
-    //Motor Speed range 1 - 300000,
-    //accel range  0 - 500000
-    stepper.setMaxSpeed(rate).setAcceleration(int(rate / 1.0 * 5));
+/**
+ * Motor Speed range:  1 - 300000
+ */
+void Flower::setSpeed(int speed) {
+    stepper.setMaxSpeed(speed);
+}
+
+/**
+ * Acceleration range: 0 - 500000
+ */
+void Flower::setAcceleration(int acceleration) {
+    stepper.setAcceleration(acceleration);
+}
+
+/**
+ * Motor Speed range:  1 - 300000
+ * Acceleration range: 0 - 500000
+ */
+void Flower::setRate(int speed, int acceleration) {
+    setSpeed(speed);
+    setAcceleration(acceleration);
 }
 
 void Flower::step() {
@@ -94,17 +110,17 @@ void Flower::moveUntilStall() {
     int iscount = 0;
     int step = 0;
     while (true) {
-        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threhold) {
+        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threshold) {
             Serial.println("finished");
             return;
         }
-        lastsum = analogRead(_sensorpin);
+        lastsum = analogRead(_sensor_pin);
         stepper.setTargetRel(dir * _stall_detection_move_block);
         controller.move(stepper);
         if (iscount > 0) {
             step += _stall_detection_move_block;
         }
-        sum = analogRead(_sensorpin);
+        sum = analogRead(_sensor_pin);
     }
 }
 
@@ -115,7 +131,7 @@ void Flower::home() {
     int iscount = 0;
     int step = 0;
     while (true) {
-        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threhold) {
+        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threshold) {
             iscount += 1;
             if (iscount > 2) {
                 total_step = step / 2;
@@ -126,19 +142,19 @@ void Flower::home() {
             } else {
                 dir = 1;
             }
-            stepper.setTargetRel(dir * _boundry_offset);
+            stepper.setTargetRel(dir * _boundary_offset);
             controller.move(stepper);
             delay(500);
 
         }
-        lastsum = analogRead(_sensorpin);
+        lastsum = analogRead(_sensor_pin);
         stepper.setTargetRel(dir * _stall_detection_move_block);
         controller.move(stepper);
         if (iscount > 0) {
             step += _stall_detection_move_block;
         }
 
-        sum = analogRead(_sensorpin);
+        sum = analogRead(_sensor_pin);
     }
 }
 
@@ -185,7 +201,7 @@ void Flower::setDir(bool open) {
 }
 
 bool Flower::operator==(Flower &other) const {
-    return this->_dirpin == other._dirpin &&
-           this->_steppin == other._steppin &&
-           this->_sensorpin == other._sensorpin;
+    return this->_dir_pin == other._dir_pin &&
+           this->_step_pin == other._step_pin &&
+           this->_sensor_pin == other._sensor_pin;
 }

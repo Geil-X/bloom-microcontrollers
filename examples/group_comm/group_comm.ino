@@ -31,6 +31,8 @@ void loop() {
     else if (commandName == "FORCESTOP") { group.forceStop(); }
     else if (commandName == "RESET") { group.reset(); }
     else if (commandName == "THREHOLD") { threshold(commandValue, spaceIndex); }
+    else if (commandName == "SPEED") { speed(commandValue, spaceIndex); }
+    else if (commandName == "ACCELERATION") { acceleration(commandValue, spaceIndex); }
 }
 
 // Commands
@@ -60,8 +62,8 @@ void setupStepper() {
     log(INFO, "Finish Setup");
     //TODO: Add function for thread
 
-    group.setThrehold(0, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
-    group.setThrehold(1, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
+    group.setThreshold(0, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
+    group.setThreshold(1, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
 }
 
 void home(String commandValue, int spaceIndex) {
@@ -107,8 +109,18 @@ void threshold(String commandValue, int spaceIndex) {
     int fourSpaceIndex = commandValue.indexOf(' ', thirdSpaceIndex + 1);
     String commandValues4 = commandValue.substring(fourSpaceIndex + 1);
     log(INFO, commandValues + " " + commandValues2 + " " + commandValues3 + " " + commandValues4);
-    group.setThrehold(commandValues.toInt(), commandValues2.toInt(), commandValues3.toInt(),
+    group.setThreshold(commandValues.toInt(), commandValues2.toInt(), commandValues3.toInt(),
                       commandValues4.toInt());
+}
+
+void speed(String commandValue, int spaceIndex) {
+    String speedString = commandValue.substring(spaceIndex + 1);
+    group.setSpeed(speedString.toInt());
+}
+
+void acceleration(String commandValue, int spaceIndex) {
+    String accelerationString = commandValue.substring(spaceIndex + 1);
+    group.setAcceleration(accelerationString.toInt());
 }
 
 

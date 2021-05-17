@@ -29,9 +29,14 @@ public:
 
     void move(int target, int *motors);
 
+
     void moveInd(int *target, int *motors);
 
-    void setThrehold(int flowerid, int stall_threhold, int boundry_offset, int stall_detection_move_block);
+    void setSpeed(int speed);
+
+    void setAcceleration(int acceleration);
+
+    void setThreshold(int flower_id, int stall_threshold, int boundary_offset, int stall_detection_move_block);
 
     void reset();
 

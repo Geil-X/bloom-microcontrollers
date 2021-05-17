@@ -30,9 +30,24 @@ int FlowerGroup::numFlower() {
     return totalFlower;
 }
 
-void FlowerGroup::setThrehold(int flowerid, int stall_threhold, int boundry_offset, int stall_detection_move_block) {
-    if (flowerid >= 0 && flowerid < 10) {
-        flowers[flowerid]->setupThrehold(stall_threhold, boundry_offset, stall_detection_move_block);
+void FlowerGroup::setSpeed(int speed) {
+    for (int i = 0; i < totalFlower; i++) {
+        Flower *flower = flowers[i];
+        flower->setSpeed(speed);
+    }
+}
+
+void FlowerGroup::setAcceleration(int acceleration) {
+    for (int i = 0; i < totalFlower; i++) {
+        Flower *flower = flowers[i];
+        flower->setAcceleration(acceleration);
+    }
+}
+
+void FlowerGroup::setThreshold(
+        int flower_id, int stall_threshold, int boundary_offset, int stall_detection_move_block) {
+    if (flower_id >= 0 && flower_id < 10) {
+        flowers[flower_id]->setupThreshold(stall_threshold, boundary_offset, stall_detection_move_block);
     }
 }
 
@@ -54,14 +69,14 @@ void FlowerGroup::recordSensorVal() {
         for (int j = 0; j < flowers[i]->total_step; j++) {
             flowers[i]->stepper.setTargetAbs(j);
             controller.move(*&flowers[i]->stepper);
-            step2SensorVal[i][j] = analogRead(flowers[i]->_sensorpin);
+            step2SensorVal[i][j] = analogRead(flowers[i]->_sensor_pin);
             delay(5);
         }
     }
 }
 
 float FlowerGroup::getSensorVal(Flower *f) {
-    return analogRead(f->_sensorpin);
+    return analogRead(f->_sensor_pin);
 }
 
 void FlowerGroup::stat() {
@@ -74,7 +89,7 @@ void FlowerGroup::checkStall() {
     if (_isrunning) {
         for (int i = 0; i < totalFlower; i++) {
             if (working[i] == 1) {
-                float tmp = analogRead(flowers[i]->_sensorpin);
+                float tmp = analogRead(flowers[i]->_sensor_pin);
                 if (_count[i] < 12) {
                     _count[i] += 1;
                     _sum[i] += tmp;
@@ -255,9 +270,9 @@ void FlowerGroup::move(int target) {
                 //count ++;
                 Serial.print("Stall detected move Stepper");
                 Serial.println(i);
-                flowers[i]->setRate(300000);
+                flowers[i]->setRate(300000, 300000 * 5);
                 flowers[i]->moveUntilStall();
-                flowers[i]->setRate(50000);
+                flowers[i]->setRate(50000, 50000 * 5);
                 finished[i] = 1;
                 //flowers[i]->stepper.setPosition(0);74 
             }
@@ -327,9 +342,9 @@ void FlowerGroup::move(int target, int *motors) {
                 //count ++;
                 Serial.print("Stall detected move Stepper ");
                 Serial.println(motors[i] - 1);
-                flowers[motors[i] - 1]->setRate(300000);
+                flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
                 flowers[motors[i] - 1]->moveUntilStall();
-                flowers[motors[i] - 1]->setRate(50000);
+                flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
                 finished[motors[i] - 1] = 1;
                 //flowers[i]->stepper.setPosition(0);74 
             }
@@ -401,16 +416,16 @@ void FlowerGroup::moveInd(int *target, int *motors) {
                     //count ++;
                     Serial.print("Stall detected move Stepper ");
                     Serial.println(motors[i] - 1);
-                    flowers[motors[i] - 1]->setRate(300000);
+                    flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
                     flowers[motors[i] - 1]->moveUntilStall();
-                    flowers[motors[i] - 1]->setRate(50000);
+                    flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
                     finished[motors[i] - 1] = 1;
                     //flowers[i]->stepper.setPosition(0);74 
                 }
             } else if (recorver_method == 1) {
-                flowers[motors[i] - 1]->setRate(300000);
+                flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
                 flowers[motors[i] - 1]->moveUntilStall();
-                flowers[motors[i] - 1]->setRate(50000);
+                flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
                 flowers[motors[i] - 1]->stepper.setPosition(0);
                 flowers[motors[i] - 1]->stepper.setTargetAbs(target[i]);
                 working[motors[i] - 1] = 1;
