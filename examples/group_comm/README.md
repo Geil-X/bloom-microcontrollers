@@ -65,8 +65,18 @@
   ```
   SPEED <speed>
   ```
- 
+
 * Set the acceleration of all the motors in steps per second squared
   ```
   ACCELERATION <acceleration>
+  ```
+  
+* Ping the microcontroller to check its status
+  ```
+  PING
+  ```
+
+* Restart the microcontroller
+  ```
+  RESTART
   ```
