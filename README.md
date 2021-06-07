@@ -2,6 +2,13 @@
 Flower C++ Library for individual controls
 
 
+# Setup
+
+* Install the [Platform IO](https://platformio.org/install/cli) command line interface.
+* If using the CLion development IDE you can install the [Platform IO Plugin](https://plugins.jetbrains.com/plugin/13922-platformio-for-clion).
+    * You can learn more about CLion and Platform IO through this [tutorial](https://blog.jetbrains.com/clion/2020/08/arduino-from-hobby-to-prof-p1/).
+
+
 # Installation Steps (In progress):
 - Download this repo as Zip
 - Install the Zip as library in Arduino / Teenarduino program

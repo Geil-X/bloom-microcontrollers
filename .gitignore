@@ -1,11 +1,3 @@
-# Intellij
-
-.idea/
-
-# C/C++ Files
-
-cmake-build-debug/
-
-# Mac OS
-
-.DS_Store/
+.pio
+CMakeListsPrivate.txt
+cmake-build-*/ 
