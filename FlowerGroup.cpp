@@ -482,15 +482,3 @@ bool FlowerGroup::containsFlower(Flower *f) {
     }
     return false;
 }
-
-/*
-void FlowerGroup::move(int[] motors, Stepper workingMotors){
-    for (int i=0; i<sizeof(motors); i++){
-        controller.move(*workingMotors[motors[i]]);
-    }
-    while(controller.isRunning()){              // wait until the movement is finished
-        delay(5);                     
-    }
-
-
-}*/

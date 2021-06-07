@@ -18,6 +18,7 @@ const int STALL_DETECTION_MOVE_BLOCK = 40;
 // Execution Variables
 FlowerGroup group;
 bool debug = false;
+bool isSetup = false;
 
 // Info for parsing and accessing user commands
 const int MAX_COMMAND_LENGTH = 10;
@@ -25,6 +26,7 @@ String *userCommand = new String[MAX_COMMAND_LENGTH];
 int userCommandCount = 0;
 
 // Logging Strings
+const String DEBUG = "Debug";
 const String INFO = "Info";
 const String WARN = "Warn";
 const String ERROR = "Error";
@@ -84,8 +86,8 @@ void newStepper(String *commands, int count) {
 void addStepper(int port1, int port2, int sensorPin) {
     if (group.addStepper(new Flower(port1, port2, sensorPin))) {
         group.stat();
-        log(INFO, "Flower " + String(port1) + " " + String(port2) + " " + String(sensorPin) + " Created.");
-        log(INFO, "Flower Added to the group. Total number of Flower:" + String(group.numFlower()));
+        log(DEBUG, "Flower " + String(port1) + " " + String(port2) + " " + String(sensorPin) + " Created.");
+        log(DEBUG, "Flower Added to the group. Total number of Flower:" + String(group.numFlower()));
     } else {
         log(ERROR, "Failed to add flower " + String(port1) + " " + String(port2) + " " + String(sensorPin));
     }
@@ -98,13 +100,18 @@ void addStepper(int port1, int port2, int sensorPin) {
  * SETUP
  */
 void setupStepper() {
-    log(INFO, "Start Setup");
-    group.setup();
-    log(INFO, "Finish Setup");
+    if (!isSetup) {
+        log(INFO, "Setup Started");
+        group.setup();
 
-    //TODO: Add function for thread
-    group.setThreshold(0, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
-    group.setThreshold(1, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
+        //TODO: Add function for thread
+        group.setThreshold(1, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
+        group.setThreshold(2, STALL_THRESHOLD, BOUNDARY_OFFSET, STALL_DETECTION_MOVE_BLOCK);
+
+        isSetup = true;
+    }
+
+    log(RESPONSE, "Setup Finished");
 }
 
 /**
@@ -194,6 +201,7 @@ void threshold(String *commands, int count) {
  * SPEED <speed>
  *
  * speed: The speed to set all the steppers in steps per second
+ *
  */
 void speed(String *commands, int count) {
     if (count != 2) invalidArgumentCount(commands[0]);
@@ -239,7 +247,10 @@ void softRestart() {
 /**
  * Parse a string of comma separated integers into an array of integers.
  * @param s The string to parse
- * @return The parsed array of integers
+ * @return
+ *     The parsed array of integers which can be used with the FlowerGroup functions
+ *     The array of integers contains the number of values within it as the first index.
+ *     For example, for the values 1,2,3 the array returned from this function is {3, 1, 2, 3}
  */
 int *parseNumbers(String s) {
     int count = 0;
