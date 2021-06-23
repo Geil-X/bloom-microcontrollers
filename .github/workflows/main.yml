@@ -43,3 +43,9 @@ jobs:
 
       - name: Run PlatformIO
         run: pio run -e group_comm -e thread
+
+      - name: Group Communication Binary Hex Firmware
+        uses: actions/upload-artifact@v2
+        with:
+          name: group_comm
+          path: .pio/build/group_comm/firmware.hex
