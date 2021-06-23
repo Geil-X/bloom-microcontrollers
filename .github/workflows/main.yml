@@ -1,15 +1,15 @@
 name: PlatformIO CI
 
-on: [ push, workflow_dispatch ]
-  # triggers the workflow on push or pull request events but only for the master branch
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
   # will be enabled when base is working
-  # push:
-  #   branches: [ master ]
-  # pull_request:
-  #   branches: [ master ]
-  #
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
   # allows you to run this workflow manually from the actions tab
-  # workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -44,7 +44,7 @@ jobs:
       - name: Run PlatformIO
         run: pio run -e group_comm -e thread
 
-      - name: Group Communication Binary Hex Firmware
+      - name: Store Group Communication Binary Hex Firmware
         uses: actions/upload-artifact@v2
         with:
           name: group_comm
