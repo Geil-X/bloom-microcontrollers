@@ -1,6 +1,19 @@
 #include "FlowerGroup.h"
 
+// ---- Constants ----
+
 const int MAX_FLOWERS = 10;
+
+const int MAX_RANGE = 100;
+const int MIN_RANGE = 0;
+
+const int PRE_MOTOR_STALL_SPEED =  300000;
+const int PRE_MOTOR_STALL_ACCELERATION = PRE_MOTOR_STALL_SPEED * 5;
+const int POST_MOTOR_STALL_SPEED =  50000;
+const int POST_MOTOR_STALL_ACCELERATION = POST_MOTOR_STALL_SPEED * 5;
+
+
+// ---- Internal Variables ----
 
 IntervalTimer myTimer;
 Flower *flowers[MAX_FLOWERS];
@@ -180,7 +193,6 @@ void FlowerGroup::home(int *motors) {
 }
 
 void FlowerGroup::clear() {
-
     numFlowers = 0;
 }
 
@@ -243,13 +255,7 @@ void FlowerGroup::moveAbs(int target) {
 
 void FlowerGroup::move(int target) {
     _isRunning = true;
-    //BOUND ERROR check
-    if (target < 0) {
-        target = 0;
-    }
-    if (target > 100) {
-        target = 100;
-    }
+    target = constrain(target, MIN_RANGE, MAX_RANGE);
 
     Stepper *workingMotors[workingFlowers];
     int count = 0;
@@ -270,9 +276,9 @@ void FlowerGroup::move(int target) {
                 //_count ++;
                 Serial.print("Stall detected move Stepper");
                 Serial.println(i);
-                flowers[i]->setRate(300000, 300000 * 5);
+                flowers[i]->setRate(PRE_MOTOR_STALL_SPEED, PRE_MOTOR_STALL_ACCELERATION);
                 flowers[i]->moveUntilStall();
-                flowers[i]->setRate(50000, 50000 * 5);
+                flowers[i]->setRate(POST_MOTOR_STALL_SPEED, POST_MOTOR_STALL_ACCELERATION);
                 finished[i] = 1;
                 //flowers[i]->stepper.setPosition(0);74 
             }
@@ -282,46 +288,15 @@ void FlowerGroup::move(int target) {
             count++;
         }
     }
-    //TODO:Need to fix the variable match in the function
-    if (count == 1) {
-        controller.move(*workingMotors[0]);
-    } else if (count == 2) {
-        controller.move(*workingMotors[0], *workingMotors[1]);
-    } else if (count == 3) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2]);
-    } else if (count == 4) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3]);
-    } else if (count == 5) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4]);
-    } else if (count == 6) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5]);
-    } else if (count == 7) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6]);
-    } else if (count == 8) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7]);
-    } else if (count == 9) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7], *workingMotors[8]);
-    } else if (count == 10) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7], *workingMotors[8], *workingMotors[9]);
-    }
+
+    moveAll(workingMotors, count);
     _isRunning = false;
 }
 
 
 void FlowerGroup::move(int target, int *motors) {
     _isRunning = true;
-    //BOUND ERROR check
-    if (target < 0) {
-        target = 0;
-    }
-    if (target > 100) {
-        target = 100;
-    }
+    target = constrain(target, MIN_RANGE, MAX_RANGE);
 
     Serial.println(String(target));
 
@@ -344,9 +319,9 @@ void FlowerGroup::move(int target, int *motors) {
                 //_count ++;
                 Serial.print("Stall detected move Stepper ");
                 Serial.println(motors[i] - 1);
-                flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
+                flowers[motors[i] - 1]->setRate(PRE_MOTOR_STALL_SPEED, PRE_MOTOR_STALL_ACCELERATION);
                 flowers[motors[i] - 1]->moveUntilStall();
-                flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
+                flowers[motors[i] - 1]->setRate(POST_MOTOR_STALL_SPEED, PRE_MOTOR_STALL_ACCELERATION);
                 finished[motors[i] - 1] = 1;
                 //flowers[i]->stepper.setPosition(0);74 
             }
@@ -356,33 +331,8 @@ void FlowerGroup::move(int target, int *motors) {
             count++;
         }
     }
-    //TODO:Need to fix the variable match in the function
-    if (count == 1) {
-        controller.move(*workingMotors[0]);
-    } else if (count == 2) {
-        controller.move(*workingMotors[0], *workingMotors[1]);
-    } else if (count == 3) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2]);
-    } else if (count == 4) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3]);
-    } else if (count == 5) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4]);
-    } else if (count == 6) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5]);
-    } else if (count == 7) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6]);
-    } else if (count == 8) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7]);
-    } else if (count == 9) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7], *workingMotors[8]);
-    } else if (count == 10) {
-        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3], *workingMotors[4],
-                        *workingMotors[5], *workingMotors[6], *workingMotors[7], *workingMotors[8], *workingMotors[9]);
-    }
+
+    moveAll(workingMotors, count);
     delete[] motors;
     _isRunning = false;
 }
@@ -396,12 +346,7 @@ void FlowerGroup::moveInd(int *target, int *motors) {
     int count = 0;
     for (int i = 1; i < motors[0] + 1; i++) {
         if (working[motors[i] - 1] == 0) {
-            if (target[i] < 0) {
-                target[i] = 0;
-            }
-            if (target[i] > 100) {
-                target[i] = 100;
-            }
+            target[i] = constrain(target[i], MIN_RANGE, MAX_RANGE);
             if (recoverMethod == 0) {
                 if (target[i] == 0) {
                     Serial.print("recover Stepper");
@@ -418,16 +363,16 @@ void FlowerGroup::moveInd(int *target, int *motors) {
                     //_count ++;
                     Serial.print("Stall detected move Stepper ");
                     Serial.println(motors[i] - 1);
-                    flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
+                    flowers[motors[i] - 1]->setRate(PRE_MOTOR_STALL_SPEED, PRE_MOTOR_STALL_ACCELERATION);
                     flowers[motors[i] - 1]->moveUntilStall();
-                    flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
+                    flowers[motors[i] - 1]->setRate(POST_MOTOR_STALL_SPEED, POST_MOTOR_STALL_ACCELERATION);
                     finished[motors[i] - 1] = 1;
                     //flowers[i]->stepper.setPosition(0);74 
                 }
             } else if (recoverMethod == 1) {
-                flowers[motors[i] - 1]->setRate(300000, 300000 * 5);
+                flowers[motors[i] - 1]->setRate(PRE_MOTOR_STALL_SPEED, PRE_MOTOR_STALL_ACCELERATION);
                 flowers[motors[i] - 1]->moveUntilStall();
-                flowers[motors[i] - 1]->setRate(50000, 50000 * 5);
+                flowers[motors[i] - 1]->setRate(POST_MOTOR_STALL_SPEED, POST_MOTOR_STALL_ACCELERATION);
                 flowers[motors[i] - 1]->stepper.setPosition(0);
                 flowers[motors[i] - 1]->stepper.setTargetAbs(target[i]);
                 working[motors[i] - 1] = 1;
@@ -443,7 +388,53 @@ void FlowerGroup::moveInd(int *target, int *motors) {
             count++;
         }
     }
-    //TODO:Need to fix the variable match in the function
+    moveAllAsync(workingMotors, count);
+    delete[] motors;
+    _isRunning = false;
+}
+
+
+// ---- Private Functions ----
+
+/**
+ * Wrapper for calling variadic functions from an array
+ */
+void FlowerGroup::moveAll(Stepper *workingMotors[], int count) {
+    if (count == 1) {
+        controller.move(*workingMotors[0]);
+    } else if (count == 2) {
+        controller.move(*workingMotors[0], *workingMotors[1]);
+    } else if (count == 3) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2]);
+    } else if (count == 4) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3]);
+    } else if (count == 5) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4]);
+    } else if (count == 6) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4], *workingMotors[5]);
+    } else if (count == 7) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4], *workingMotors[5], *workingMotors[6]);
+    } else if (count == 8) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4], *workingMotors[5], *workingMotors[6], *workingMotors[7]);
+    } else if (count == 9) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4], *workingMotors[5], *workingMotors[6], *workingMotors[7],
+                        *workingMotors[8]);
+    } else if (count == 10) {
+        controller.move(*workingMotors[0], *workingMotors[1], *workingMotors[2], *workingMotors[3],
+                        *workingMotors[4], *workingMotors[5], *workingMotors[6], *workingMotors[7],
+                        *workingMotors[8], *workingMotors[9]);
+    }
+}
+
+/**
+ * Wrapper for calling variadic functions from an array
+ */
+void FlowerGroup::moveAllAsync(Stepper *workingMotors[], int count) {
     if (count == 1) {
         controller.moveAsync(*workingMotors[0]);
     } else if (count == 2) {
@@ -473,8 +464,6 @@ void FlowerGroup::moveInd(int *target, int *motors) {
                              *workingMotors[4], *workingMotors[5], *workingMotors[6], *workingMotors[7],
                              *workingMotors[8], *workingMotors[9]);
     }
-    delete[] motors;
-    _isRunning = false;
 }
 
 bool FlowerGroup::containsFlower(Flower *f) {

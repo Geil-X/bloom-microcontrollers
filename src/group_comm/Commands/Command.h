@@ -148,7 +148,9 @@ public:
         this->ids = ids;
     }
 
-    ~Home() override = default;
+    ~Home() override = {
+            delete ids;
+    };
 
     void execute() override {
         FlowerGroup::home(ids);
