@@ -148,8 +148,8 @@ public:
         this->ids = ids;
     }
 
-    ~Home() override = {
-            delete ids;
+    ~Home() override {
+        delete ids;
     };
 
     void execute() override {

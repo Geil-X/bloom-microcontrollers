@@ -5,26 +5,27 @@
 
 #include "Arduino.h"
 #include "Flower.h"
-#include "TeensyStep.h"
-#include <TeensyThreads.h>
 
 const int INIT_TOTAL_STEP = 1600;
 const long INIT_STEP_PER_SEC = 50000; // Steps / second
 const long INIT_ACCELERATION = 50000;        // Steps / second^2
 
+// The distance bellow which a stall is detected. This is relative to the petal rotation from the rotary sensor.
 const int STALL_THRESHOLD = 5;
+// The distance that the motor is moved away from where the stall occurred
 const int BOUNDARY_OFFSET = 100;
+// The distance movement distance between stall detection checks
 const int STALL_DETECTION_MOVE_BLOCK = 100;
 
 
-Flower::Flower() {}
+Flower::Flower() : Flower(-1, -1, -1) {}
 
-Flower::Flower(int DIR_PIN, int STEP_PIN, int sensorpin) {
-    _dir_pin = DIR_PIN;
-    _step_pin = STEP_PIN;
+Flower::Flower(int dir_pin, int step_pin, int sensor_pin) {
+    _dir_pin = dir_pin;
+    _step_pin = step_pin;
     stepper.setup(_step_pin, _dir_pin);
-    _sensor_pin = sensorpin;
-    _dir = 1;
+    _sensor_pin = sensor_pin;
+    _dir = Open;
     _rate = 10;
     _lastSum = 0;
     _count = 0;
@@ -52,6 +53,9 @@ void Flower::setupThreshold(int stall_threshold, int boundary_offset, int stall_
     _stall_detection_move_block = stall_detection_move_block;
 }
 
+/**
+ * Initializes the speed and acceleration of the motor.
+ */
 void Flower::setup() {
     setRate(INIT_STEP_PER_SEC, INIT_ACCELERATION);
 }
@@ -79,125 +83,90 @@ void Flower::setRate(int speed, int acceleration) {
     setAcceleration(acceleration);
 }
 
-void Flower::step() {
-    if (_dir == 0) {
-        stepper.setTargetRel(-1);
-        this->current_step += 1;
-    } else {
-        stepper.setTargetRel(1);
-        this->current_step -= 1;
-    }
-}
+void Flower::step() { step(1); }
 
 void Flower::step(int steps) {
-    if (_dir == 0) {
-        stepper.setTargetRel(-1 * steps);
-        this->current_step += steps;
-    } else {
-        stepper.setTargetRel(steps);
-        this->current_step -= steps;
-    }
+    _isrunning = true;
+    stepper.setTargetRel(steps);
+    controller.move(stepper);
+    this->current_step -= steps;
+    _isrunning = false;
 }
 
 void Flower::reverse() {
-    _dir = 1 - _dir;
+    _dir = _dir == Open ? Close : Open;
 }
 
-void Flower::moveUntilStall() {
-    double sum = 0;
-    double lastsum = 0;
-    int dir = -1;
-    int iscount = 0;
-    int step = 0;
+/**
+ * Move until a stall is detected. For consistency, several consecutive stalls
+ * are checked to ensure that the stalls occurred at the edge of the movement.
+ *
+ * @param direction Either 1 or -1 indicating the direction of movement.
+ * @return The number of steps that it took to move to the stall. This doesn't
+ *  include the number of steps that were taken while stalling.
+ */
+int Flower::moveUntilStall(Direction direction) {
+    const int REQUIRED_CONSECUTIVE_STALLS = 4;
+    const int BOUNDARY_STEPS = 3;
+    int encoder_reading = 0;
+    int previous_encoder_reading = 0;
+    int steps = 0;
+    int stall_count = 0;
+
     while (true) {
-        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threshold) {
-            Serial.println("finished");
-            return;
+        int sensor_delta = abs(encoder_reading - previous_encoder_reading);
+        bool stall_detected = sensor_delta != 0 && sensor_delta < _stall_threshold;
+
+        if (stall_detected) {
+            stall_count++;
+            // Exit condition
+            if (stall_count >= REQUIRED_CONSECUTIVE_STALLS) {
+                // Reverse the motor a single step
+                stepper.setTargetRel(-direction * BOUNDARY_STEPS * _stall_detection_move_block);
+                controller.move(stepper);
+
+                return steps - BOUNDARY_STEPS;
+            }
+        } else {
+            // Increment the number of steps only if the motor did not stall
+            steps += _stall_detection_move_block;
         }
-        lastsum = analogRead(_sensor_pin);
-        stepper.setTargetRel(dir * _stall_detection_move_block);
+
+        // Move a single step
+        stepper.setTargetRel(direction * _stall_detection_move_block);
         controller.move(stepper);
-        if (iscount > 0) {
-            step += _stall_detection_move_block;
-        }
-        sum = analogRead(_sensor_pin);
+
+        // Record the encoder movement of a single step
+        previous_encoder_reading = encoder_reading;
+        encoder_reading = analogRead(_sensor_pin);
     }
 }
+
+int Flower::moveUntilStall() { return moveUntilStall(Open); }
 
 void Flower::home() {
-    double sum = 0;
-    double lastsum = 0;
-    int dir = 1;
-    int iscount = 0;
-    int step = 0;
-    while (true) {
-        if ((sum - lastsum != 0) && abs(sum - lastsum) < _stall_threshold) {
-            iscount += 1;
-            if (iscount > 2) {
-                total_step = step / 2;
-                break;
-            }
-            if (dir == 1) {
-                dir = -1;
-            } else {
-                dir = 1;
-            }
-            stepper.setTargetRel(dir * _boundary_offset);
-            controller.move(stepper);
-            delay(500);
-
-        }
-        lastsum = analogRead(_sensor_pin);
-        stepper.setTargetRel(dir * _stall_detection_move_block);
-        controller.move(stepper);
-        if (iscount > 0) {
-            step += _stall_detection_move_block;
-        }
-
-        sum = analogRead(_sensor_pin);
-    }
+    total_step = moveUntilStall(Open);
+    total_step = moveUntilStall(Close);
+    current_step = total_step;
 }
 
 void Flower::open() {
-    _isrunning = true;
-    stepper.setTargetRel(this->current_step);
-    controller.move(stepper);
-    this->current_step = 0;
-    _isrunning = false;
+    step(current_step);
 }
 
 void Flower::close() {
-    _isrunning = true;
-    stepper.setTargetRel(this->current_step - total_step);
-    controller.move(stepper);
-    this->current_step = total_step;
-    _isrunning = false;
+    step(current_step - total_step);
 }
 
 int Flower::open(int percentage) {
-    _isrunning = true;
-    long target = (long) total_step * percentage / 100;
-    if (this->current_step < target) {
-        setDir(false);
-        while (this->current_step < target) {
-            step();
-        }
-    } else {
-        setDir(true);
-        while (this->current_step > target) {
-            step();
-        }
-    }
-    _isrunning = false;
+    percentage = constrain(percentage, 0, 100);
+    long target = (long) (total_step * (percentage / 100.));
+    step(current_step - target);
     return percentage;
 }
 
-void Flower::setDir(bool open) {
-    if (open) {
-        _dir = 1;
-    } else {
-        _dir = 0;
-    }
+void Flower::setDir(Direction dir) {
+    _dir = dir;
 }
 
 bool Flower::operator==(Flower &other) const {

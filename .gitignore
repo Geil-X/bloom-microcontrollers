@@ -18,5 +18,4 @@
 .pio
 
 # CMake
-CMakeListsPrivate.txt
 cmake-build-*/ 

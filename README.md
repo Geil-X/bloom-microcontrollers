@@ -12,10 +12,12 @@ Flower C++ library teensy microcontrollers
     * Add these to your system `PATH` variable:
         * `C:\MinGW\bin`
         * `C:\MinGW\msys\1.0\bin`
+* Install the [teensy loader application](https://www.pjrc.com/teensy/loader.html)
 * If using the CLion development IDE you can install
   the [Platform IO Plugin](https://plugins.jetbrains.com/plugin/13922-platformio-for-clion).
     * You can learn more about CLion and Platform IO through
       this [tutorial](https://blog.jetbrains.com/clion/2020/08/arduino-from-hobby-to-prof-p1/)
+    * Set up the CLion configurations to compile the code using this [tutorial](https://docs.platformio.org/en/latest/integration/ide/clion.html) 
 
 # Installation Steps (In progress):
 

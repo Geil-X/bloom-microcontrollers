@@ -8,11 +8,16 @@
 #include "Arduino.h"
 #include "TeensyStep.h"
 
+enum Direction {
+    Open = 1,
+    Close = -1
+};
+
 class Flower {
 public:
     Flower();
 
-    Flower(int DIR_PIN, int STEP_PIN, int sensorpin);
+    Flower(int dir_pin, int step_pin, int sensorpin);
 
     void setup();
 
@@ -36,13 +41,14 @@ public:
 
     void close();
 
-    void setDir(bool open);
+    void setDir(Direction dir);
 
     void setupThreshold(int stall_threshold, int boundary_offset, int stall_detection_move_block);
 
     void recordStepSensorValue();
 
-    void moveUntilStall();
+    int moveUntilStall();
+    int moveUntilStall(Direction direction);
 
     void stat();
 
@@ -68,7 +74,7 @@ private:
     int _ms1pin;
     int _ms2pin;
     int _slppin;
-    int _dir;
+    Direction _dir;
     int _driver;
 
     uint32_t _lasttime;
