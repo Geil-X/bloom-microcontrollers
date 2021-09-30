@@ -5,7 +5,7 @@ Flower C++ library teensy microcontrollers
 # Setup
 
 * Install the [Platform IO](https://platformio.org/install/cli) command line interface
-* Install the C++ compiler [MinGW Gcc/G++](https://sourceforge.net/projects/mingw/files/latest/download)
+* On Windows, install the C++ compiler [MinGW Gcc/G++](https://sourceforge.net/projects/mingw/files/latest/download)
     * You can follow this [guide](https://www.ics.uci.edu/~pattis/common/handouts/mingweclipse/mingw.html) to complete
       this installation
     * Be sure to check __mingw32-base__, __mingw32-gcc-g++__, and __msys-base__

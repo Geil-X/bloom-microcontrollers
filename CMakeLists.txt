@@ -30,4 +30,4 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST})
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} lib/I2C/Controller.cpp lib/I2C/Controller.h lib/I2C/Peripheral.cpp lib/I2C/Peripheral.h src/native/native.cpp lib/Flower/Flower.cpp lib/Flower/Flower.h)

@@ -1,7 +1,7 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#include "../../../../.platformio/packages/framework-arduinoteensy/cores/teensy3/Arduino.h"
+#include <Arduino.h>
 
 // Logging Strings
 const String DEBUG = "Debug";

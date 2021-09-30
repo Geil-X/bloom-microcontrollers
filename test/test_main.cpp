@@ -1,17 +1,12 @@
-#include <Arduino.h>
-#include "unity.h"
-
-#include "group_comm/Commands/Command.h"
-#include "group_comm/Commands/CommandFactory.h"
+#include <unity.h>
+#include <Command.h>
 
 // Test Setup and Tear Down
 
 Command *command;
 Command *expected;
-CommandFactory commandFactory;
 
 void setUp(void) {
-    commandFactory = CommandFactory();
 }
 
 void tearDown(void) {
@@ -31,7 +26,6 @@ void test_equality() {
 // Arduino Test Program
 
 void setup() {
-    delay(2000); // service delay
     UNITY_BEGIN();
 
     RUN_TEST(test_equality);
