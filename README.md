@@ -17,7 +17,7 @@ Flower C++ library teensy microcontrollers
   the [Platform IO Plugin](https://plugins.jetbrains.com/plugin/13922-platformio-for-clion).
     * You can learn more about CLion and Platform IO through
       this [tutorial](https://blog.jetbrains.com/clion/2020/08/arduino-from-hobby-to-prof-p1/)
-    * Set up the CLion configurations to compile the code using this [tutorial](https://docs.platformio.org/en/latest/integration/ide/clion.html) 
+    * Set up the CLion configurations to compile the code using this [tutorial](https://docs.platformio.org/enable/latest/integration/ide/clion.html) 
 
 # Installation Steps (In progress):
 

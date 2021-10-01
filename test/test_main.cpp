@@ -33,5 +33,5 @@ void setup() {
     UNITY_END(); // stop unit testing
 }
 
-void loop() {
+__attribute__((unused)) void loop() {
 }
