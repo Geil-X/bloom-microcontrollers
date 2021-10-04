@@ -1,123 +1,82 @@
-/**
- * Author Teemu Mäntykallio
- *
- * Plot TMC2130 or TMC2660 motor load using the stallGuard value.
- * You can finetune the reading by changing the STALL_VALUE.
- * This will let you control at which load the value will read 0
- * and the stall flag will be triggered. This will also set pin DIAG1 high.
- * A higher STALL_VALUE will make the reading less sensitive and
- * a lower STALL_VALUE will make it more sensitive.
- *
- * You can control the rotation speed with
- * 0 Stop
- * 1 Resume
- * + Speed up
- * - Slow down
- */
+#include <Arduino.h>
 #include <TMCStepper.h>
+#include <AccelStepper.h>
 
-#define MAX_SPEED        40 // In timer value
-#define MIN_SPEED      1000
+// ---- Initialization ----
 
-#define STALL_VALUE      15 // [-64..63]
+// Stepper Pins
+#define DIAG1_PIN   3
+#define EN_PIN      7
+#define DIR_PIN     8
+#define STEP_PIN    9
+#define CS_PIN      10
 
-#define EN_PIN           7  // Enable
-#define DIR_PIN          8  // Direction
-#define STEP_PIN         9  // Step
-#define CS_PIN           10 // Chip select
-#define SW_MOSI          11 // Software Master Out Slave In (MOSI)
-#define SW_MISO          12 // Software Master In Slave Out (MISO)
-#define SW_SCK           13 // Software Slave Clock (SCK)
+// SPI Communication
+#define SW_MOSI    11  // SDI
+#define SW_MISO    12  // SDO
+#define SW_SCK     13  // SPI Reference Clock
 
-#define R_SENSE 0.11f // Match to your driver
+// TMC2130 Parameters
+#define R_SENSE 0.11f  // Set for the silent step stick series
 
-// Select your stepper driver type
-TMC2130Stepper driver(CS_PIN, R_SENSE, SW_MOSI, SW_MISO, SW_SCK); // Software SPI
+// Controller Libraries
+TMC2130Stepper driver(CS_PIN, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
+AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 
-using namespace TMC2130_n;
+// Stall detection
+volatile bool stalled = false;
 
-// Using direct register manipulation can reach faster stepping times
-#define STEP_PORT     PORTF // Match with STEP_PIN
-#define STEP_BIT_POS      0 // Match with STEP_PIN
-
-ISR(TIMER1_COMPA_vect) {
-    //STEP_PORT ^= 1 << STEP_BIT_POS;
-    digitalWrite(STEP_PIN, !digitalRead(STEP_PIN));
+void onStall() {
+    stalled = true;
 }
 
-void setup() {
-    SPIClass::begin();
-    Serial.begin(256000);         // Init serial port and set baudrate
-    while (!Serial);               // Wait for serial port to connect
-    Serial.println("\nStart...");
+// ---- Main Functions ----
 
-    pinMode(EN_PIN, OUTPUT);
-    pinMode(STEP_PIN, OUTPUT);
+void setup() {
+    // Driver Initialization
+    pinMode(DIAG1_PIN, INPUT);
     pinMode(CS_PIN, OUTPUT);
-    pinMode(DIR_PIN, OUTPUT);
-    pinMode(SW_MISO, INPUT_PULLUP);
-    digitalWrite(EN_PIN, LOW);
+    digitalWrite(CS_PIN, HIGH);
 
     driver.begin();
-    driver.toff(4);
-    driver.blank_time(24);
-    driver.rms_current(400); // mA
+    driver.toff(4);  // us
+    driver.rms_current(600);
+    driver.en_pwm_mode(true);
+    driver.pwm_autoscale(true);
     driver.microsteps(16);
-    driver.TCOOLTHRS(0xFFFFF); // 20bit max
-    driver.THIGH(0);
     driver.semin(5);
     driver.semax(2);
     driver.sedn(0b01);
-    driver.sgt(STALL_VALUE);
 
-    // Set stepper interrupt
-    {
-        cli();//stop interrupts
-        TCCR1A = 0;// set entire TCCR1A register to 0
-        TCCR1B = 0;// same for TCCR1B
-        TCNT1 = 0;//initialize counter value to 0
-        OCR1A = 256;// = (16*10^6) / (1*1024) - 1 (must be <65536)
-        // turn on CTC mode
-        TCCR1B |= (1 << WGM12);
-        // Set CS11 bits for 8 prescaler
-        TCCR1B |= (1 << CS11);// | (1 << CS10);
-        // enable timer compare interrupt
-        TIMSK1 |= (1 << OCIE1A);
-        sei();//allow interrupts
-    }
+    driver.TCOOLTHRS(0xFFFFF);
+    driver.THIGH(0);
+
+    // Stall detection
+    driver.sgt(63);
+    driver.diag1_stall(true);
+    driver.diag1_pushpull(true);  // Active high
+
+    attachInterrupt(digitalPinToInterrupt(DIAG1_PIN), onStall, RISING);
+
+    // Stepper Initialization
+    stepper.setMaxSpeed(10000);
+    stepper.setAcceleration(5000);
+
+    stepper.setEnablePin(EN_PIN);
+    stepper.setPinsInverted(false, false, true);
+    stepper.enableOutputs();
+
+    // Initial action
+    stepper.move(10000);
 }
 
-int pinState = HIGH;
+void loop() {
 
-__attribute__((unused)) void loop() {
-    static uint32_t last_time = 0;
-    static uint32_t last_us = 0;
-    uint32_t ms = millis();
-    uint32_t us = millis();
-
-    while (Serial.available() > 0) {
-        int8_t read_byte = Serial.read();
-        if (read_byte == '0') {
-            TIMSK1 &= ~(1 << OCIE1A);
-            digitalWrite(EN_PIN, HIGH);
-        }
-        else if (read_byte == '1') {
-            TIMSK1 |= (1 << OCIE1A);
-            digitalWrite(EN_PIN, LOW);
-        }
-        else if (read_byte == '+') { if (OCR1A > MAX_SPEED) OCR1A -= 20; }
-        else if (read_byte == '-') { if (OCR1A < MIN_SPEED) OCR1A += 20; }
+    if (stalled) {
+        driver.shaft(!driver.shaft());
+        stalled = false;
+        stepper.move(10000);
     }
 
-    if ((ms - last_time) > 160) { //run every 0.1s
-        last_time = ms;
-
-        DRV_STATUS_t drv_status{0};
-        drv_status.sr = driver.DRV_STATUS();
-
-        Serial.print("0 ");
-        Serial.print(drv_status.sg_result, DEC);
-        Serial.print(" ");
-        Serial.println(driver.cs2rms(drv_status.cs_actual), DEC);
-    }
+    stepper.run();
 }
