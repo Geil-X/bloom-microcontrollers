@@ -28,24 +28,43 @@ public:
      */
     void home();
 
-    // Accessor Functions
-
-    /** Get the number of steps between the target position and the current position */
-    long remainingDistance();
-
-
     // Modifier Functions
 
     void setMaxSpeed(float speed);
-    void setSpeed(float speed);
     void setAcceleration(float acceleration);
-    void setDirection(Direction direction);
 
     // Actions
 
     void open();
     void close();
     void openTo(float percentage);
+
+    // Driver objects
+    TMC2130Stepper driver;
+    AccelStepper stepper;
+
+private:
+    void setupDriver();
+    void setupStepper();
+
+    // Modifiers
+
+    void setDirection(Direction direction);
+
+    // Accessors
+
+    /** Get the number of steps between the target position and the current position */
+    long remainingDistance();
+
+    // Actions
+
+    /**
+     * Move the motor in a particular direction until the motor stalls out.
+     *
+     * @param direction The direction to move the motor into
+     * @return The number of steps that the motor performed before stalling
+     */
+    int moveUntilStall(Direction direction);
 
     /**
      * Run the motor to implement speed and acceleration in order to proceed to the target position
@@ -57,14 +76,13 @@ public:
 
     /** Move the stepper a particular number of millimeters */
     void move(int steps, Direction direction);
-    void move(int steps);
 
     void moveBlocking(int steps, Direction direction);
-    void moveBlocking(int steps);
 
     /** Reverse the motor direction */
     void reverse();
 
+    /** Clear all motor actions */
     void stop();
 
 
@@ -81,16 +99,6 @@ public:
     static bool motorStalled();
 
     volatile static bool stalled;
-
-    // Driver objects
-    TMC2130Stepper driver;
-    AccelStepper stepper;
-
-private:
-    void setupDriver();
-    void setupStepper();
-
-    int moveUntilStall(Direction direction);
 
     // Pins
     uint8_t enable;

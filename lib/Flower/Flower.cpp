@@ -88,7 +88,7 @@ void Flower::setupDriver() {
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
     // A higher value makes stallGuard2 less sensitive and requires more torque to indicate a stall.
-    driver.sgt(30);
+    driver.sgt(50);
 
     // Enable DIAG1_PIN active on motor stall (set TCOOLTHRS before using this feature)
     driver.diag1_stall(true);
@@ -105,20 +105,18 @@ void Flower::setupStepper() {
 
 void Flower::home() {
     int delay_ms = 500;
-    int steps;
 
-    moveBlocking(BOUNDARY_STEPS, CLOSE);
     moveUntilStall(OPEN);
     delay(delay_ms);
     moveUntilStall(CLOSE);
     delay(delay_ms);
     moveUntilStall(OPEN);
     delay(delay_ms);
-    steps = moveUntilStall(CLOSE);
+    max_steps = moveUntilStall(CLOSE);
     delay(delay_ms);
 
-    max_steps = steps - BOUNDARY_STEPS * 2;
     moveBlocking(BOUNDARY_STEPS, OPEN);
+    max_steps -= BOUNDARY_STEPS * 2;
 }
 
 // ---- Accessor Functions ----
@@ -131,10 +129,6 @@ long Flower::remainingDistance() {
 
 void Flower::setMaxSpeed(float speed) {
     stepper.setMaxSpeed(speed);
-}
-
-void Flower::setSpeed(float speed) {
-    stepper.setSpeed(speed);
 }
 
 void Flower::setAcceleration(float acceleration) {
@@ -197,7 +191,6 @@ int Flower::moveUntilStall(Direction direction) {
 
     stalled = false;
     return steps;
-
 }
 
 void Flower::reverse() {

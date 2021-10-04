@@ -23,15 +23,13 @@ void setup() {
     flower.setup();
     flower.home();
 
-    flower.setMaxSpeed(2000);
-    flower.setAcceleration(150);
+    flower.setMaxSpeed(1000);
+    flower.setAcceleration(250);
 }
 
 void loop() {
+    delay(500);
     flower.open();
-    flower.openTo(50);
-    flower.open();
-    flower.close();
-    flower.openTo(50);
+    delay(500);
     flower.close();
 }
