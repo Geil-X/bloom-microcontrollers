@@ -1,8 +1,6 @@
 #ifndef COMMANDS_COMMAND_H
 #define COMMANDS_COMMAND_H
 
-// This tells the I2C controllers how long the expected message should be.
-#define MAX_I2C_DATA_SIZE 2
 
 // ---- Command Ids ----
 
@@ -23,7 +21,7 @@ enum CommandId : unsigned char {
 
 class Command {
 public:
-    Command(CommandId id) { this->id = id; }
+    explicit Command(CommandId id) { this->id = id; }
 
     friend bool operator==(const Command &lhs, const Command &rhs) {
         return lhs.id == rhs.id;
@@ -86,6 +84,10 @@ public:
         this->speed = speed;
     }
 
+    friend bool operator==(const Speed &lhs, const Speed &rhs) {
+        return lhs.id == rhs.id && lhs.speed == rhs.speed;
+    }
+
     unsigned char speed;
 };
 
@@ -93,6 +95,10 @@ class Acceleration : public Command {
 public:
     explicit Acceleration(unsigned char acceleration) : Command(ACCELERATION) {
         this->acceleration = acceleration;
+    }
+
+    friend bool operator==(const Acceleration &lhs, const Acceleration &rhs) {
+        return lhs.id == rhs.id && lhs.acceleration == rhs.acceleration;
     }
 
     unsigned char acceleration;
@@ -103,70 +109,4 @@ public:
     Ping() : Command(PING) {}
 };
 
-// ---- Parsing ----
-
-Command *parsePacket(unsigned char *packets, int packet_count) {
-    if (packet_count <= 0) return new NoCommand();
-
-    CommandId commandId = (CommandId) packets[0];
-    switch (commandId) {
-        case SETUP:
-            return new Setup();
-        case HOME:
-            return new Home();
-        case OPEN:
-            return new Open();
-        case CLOSE:
-            return new Close();
-        case OPEN_TO:
-            return new OpenTo(packets[1]);
-        case SPEED:
-            return new Speed(packets[1]);
-        case ACCELERATION:
-            return new Acceleration(packets[1]);
-        case PING:
-            return new Ping();
-        case NO_COMMAND:
-            return new NoCommand();
-        case INVALID_COMMAND:
-            return new InvalidCommand();
-        default:
-            return new InvalidCommand();
-    }
-}
-
-// ---- Creation ----
-
-unsigned char *createPacket(Command command) {
-    unsigned char[MAX_I2C_DATA_SIZE] * packet;
-    switch (command.id) {
-        case OPEN_TO:
-            OpenTo openTo = (OpenTo) command;
-            packet[0] = openTo.id;
-            packet[1] = openTo.percentage;
-            break;
-        case SPEED:
-            Speed speed = (Speed) command;
-            packet[0] = openTo.id;
-            packet[1] = openTo.speed;
-            break;
-        case ACCELERATION:
-            Acceleration acceleration = (Acceleration) command;
-            packet[0] = openTo.id;
-            packet[1] = openTo.acceleration;
-            break;
-        case NO_COMMAND:
-        case SETUP:
-        case HOME:
-        case OPEN:
-        case CLOSE:
-        case PING:
-        case INVALID_COMMAND:
-            packet[0] = command.id;
-            break;
-    }
-
-    return packet;
-}
-
-#endif // COMMANDS_COMMAND_H
+#endif  // COMMANDS_COMMAND_H

@@ -82,6 +82,9 @@ private:
     /** Reverse the motor direction */
     void reverse();
 
+    /** Set the current position to be the zero position for the flower */
+    void setZeroPosition();
+
     /** Clear all motor actions */
     void stop();
 

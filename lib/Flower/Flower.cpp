@@ -2,8 +2,6 @@
 
 using namespace TMC2130_n;
 
-#define BOUNDARY_STEPS 100
-
 Flower::Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs, uint8_t mosi, uint8_t miso, uint8_t sck,
                uint8_t diag1, float rSense)
         : driver(cs, rSense, mosi, miso, sck), stepper(stepper.DRIVER, step, dir) {
@@ -42,7 +40,7 @@ void Flower::setupDriver() {
     driver.toff(4);  // us
 
     // Set the max hardware current
-    driver.rms_current(600);  // mA
+    driver.rms_current(200);  // mA
 
     // Enable stealth chop, extremely quiet stepping
     driver.en_pwm_mode(HIGH);
@@ -88,7 +86,7 @@ void Flower::setupDriver() {
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
     // A higher value makes stallGuard2 less sensitive and requires more torque to indicate a stall.
-    driver.sgt(50);
+    driver.sgt(30);
 
     // Enable DIAG1_PIN active on motor stall (set TCOOLTHRS before using this feature)
     driver.diag1_stall(true);
@@ -103,20 +101,45 @@ void Flower::setupStepper() {
     stepper.enableOutputs();
 }
 
+/**
+ * Setting the home position. There is a lot of work to be done on this function.
+ *
+ * A delay is required between @see moveUntilStall calls so that the stall from
+ * the previous motor movement isn't carried forward to the new movement call.
+ *
+ * Presently, the two calls to @see moveUntilStall for the @see OPEN and
+ * @see CLOSE are required for some strange quirk they always stall out
+ * early before hitting the full limit.
+ *
+ * The last call to @see moveUntilStall with @see OPEN is to get the motor in
+ * the fully open position to get the max number of steps that the motor can
+ * move within.
+ *
+ */
 void Flower::home() {
     int delay_ms = 500;
 
+    // Calls to clear out some junk
     moveUntilStall(OPEN);
     delay(delay_ms);
     moveUntilStall(CLOSE);
+
+    // Fully open the motor
     delay(delay_ms);
     moveUntilStall(OPEN);
+
+    // Fully close the motor and get the number of steps for a full swing
     delay(delay_ms);
     max_steps = moveUntilStall(CLOSE);
-    delay(delay_ms);
 
-    moveBlocking(BOUNDARY_STEPS, OPEN);
-    max_steps -= BOUNDARY_STEPS * 2;
+    // Apply a boundary buffer
+    int buffer_steps = (int) (max_steps * 0.01);
+    moveBlocking(buffer_steps, OPEN);
+    max_steps -= buffer_steps * 2;
+
+    // Set the zero position for the device
+    current_position = 0;
+    setZeroPosition();
 }
 
 // ---- Accessor Functions ----
@@ -191,6 +214,10 @@ int Flower::moveUntilStall(Direction direction) {
 
     stalled = false;
     return steps;
+}
+
+void Flower::setZeroPosition() {
+
 }
 
 void Flower::reverse() {

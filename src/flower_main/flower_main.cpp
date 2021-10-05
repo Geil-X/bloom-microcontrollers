@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Flower.h>
 
 // Stepper Pins
@@ -23,8 +24,10 @@ void setup() {
     flower.setup();
     flower.home();
 
-    flower.setMaxSpeed(1000);
-    flower.setAcceleration(250);
+    flower.setMaxSpeed(2500);
+    flower.setAcceleration(350);
+
+    delay(1000);
 }
 
 void loop() {

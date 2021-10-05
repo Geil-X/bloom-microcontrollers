@@ -19,7 +19,7 @@
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
-// Controller Libraries
+// I2CController Libraries
 TMC2130Stepper driver(CS_PIN, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
 AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 
@@ -40,7 +40,7 @@ void setup() {
 
     driver.begin();
     driver.toff(4);  // us
-    driver.rms_current(600);
+    driver.rms_current(200);
     driver.en_pwm_mode(true);
     driver.pwm_autoscale(true);
     driver.microsteps(16);
@@ -67,7 +67,7 @@ void setup() {
     stepper.enableOutputs();
 
     // Initial action
-    stepper.move(10000);
+    stepper.move(1000000);
 }
 
 void loop() {
