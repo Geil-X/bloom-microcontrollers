@@ -119,7 +119,8 @@ void Flower::setupStepper() {
 void Flower::home() {
     int delay_ms = 500;
 
-    // Calls to clear out some junk
+    // Perform an open and close routine to clear out any junk for the proper homing step
+    delay(delay_ms);
     moveUntilStall(OPEN);
     delay(delay_ms);
     moveUntilStall(CLOSE);
@@ -133,9 +134,13 @@ void Flower::home() {
     max_steps = moveUntilStall(CLOSE);
 
     // Apply a boundary buffer
-    int buffer_steps = (int) (max_steps * 0.01);
+    delay(delay_ms);
+    int buffer_steps = (int) (max_steps * 0.05);
     moveBlocking(buffer_steps, OPEN);
     max_steps -= buffer_steps * 2;
+    delay(delay_ms);
+
+    Serial.println(max_steps);
 
     // Set the zero position for the device
     current_position = 0;
@@ -205,14 +210,22 @@ void Flower::moveBlocking(int steps, Direction direction) {
 }
 
 int Flower::moveUntilStall(Direction direction) {
-    int steps = 0;
-    move(5000, direction);
+    const int required_stalls = 3;
 
-    while (!motorStalled()) {
-        if (run()) steps++;
+    int steps = 0;
+    int stalls = 0;
+    move(10000, direction);
+
+    while (stalls < required_stalls) {
+        if (run()) {
+            if (motorStalled()) {
+                stalls++;
+            } else {
+                steps++;
+            }
+        }
     }
 
-    stalled = false;
     return steps;
 }
 
