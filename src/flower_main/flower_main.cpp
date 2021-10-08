@@ -17,6 +17,7 @@
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
 Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, R_SENSE);
+Direction previous_position = CLOSE;
 
 void setup() {
     Serial.begin(9600);
@@ -24,15 +25,32 @@ void setup() {
     flower.setup();
     flower.home();
 
-    flower.setMaxSpeed(2500);
-    flower.setAcceleration(350);
-
-    delay(1000);
+    flower.setMaxSpeed(MICROSTEPS * 1000);
+    flower.setAcceleration(MICROSTEPS * 300);
 }
 
 void loop() {
-    delay(500);
-    flower.open();
-    delay(500);
-    flower.close();
+    if (flower.remainingDistance() == 0) {
+        switch (previous_position) {
+            case OPEN: {
+                Serial.println("Close");
+                flower.closeAsync();
+                previous_position = CLOSE;
+                break;
+            }
+            case CLOSE: {
+                Serial.println("Open");
+                flower.openAsync();
+                previous_position = OPEN;
+                break;
+            }
+        }
+    }
+
+    if (flower.motorStalled()) {
+        delay(1000);
+        flower.home();
+    }
+
+    flower.run();
 }

@@ -28,10 +28,10 @@ Command *I2CCommandFactory::parsePackets(Packets packets) {
     }
 }
 
-Packets I2CCommandFactory::createPacket(Command *command) {
+Packets I2CCommandFactory::createPacket(volatile Command *command) {
     Packets packets = {};
     if (command == nullptr) {
-        packets.data[0] = NO_COMMAND;
+        packets.data[0] = INVALID_COMMAND;
         return packets;
     }
 

@@ -1,35 +1,90 @@
 #include <Arduino.h>
-#include <Wire.h>
+#include <I2CController.h>
 
-void sendByte(unsigned char data) {
-    Wire.beginTransmission(0);
-    Wire.write(data);
-    Wire.endTransmission();
-}
-
-unsigned char requestByte() {
-    Wire.requestFrom(0, 1);
-    if (!Wire.available()) return 255;
-    return Wire.read();
-}
+#define NUM_COMMANDS 9
+Command *commands[NUM_COMMANDS]{
+        new NoCommand(),
+        new OpenTo(10),
+        new Speed(100),
+        new Acceleration(100),
+        new Setup(),
+        new Home(),
+        new Open(),
+        new Close(),
+        new Ping()};
 
 void setup() {
     Serial.begin(9600);
-    while (!Serial) {}
-    Serial.println("Running...");
+    Serial.println("Controller:");
 
-    Wire.begin();
+    I2CController::join();
+}
+
+int current_command = 0;
+Command *sent = commands[0];
+Command *response = nullptr;
+
+void printCommand(Command *command) {
+    if (command == nullptr) {
+        Serial.println("Null Pointer");
+    }
+
+    switch (command->id) {
+        case OPEN_TO: {
+            Serial.println("Open To");
+            break;
+        }
+        case SPEED: {
+            Serial.println("Speed");
+            break;
+        }
+        case ACCELERATION: {
+            Serial.println("Acceleration");
+            break;
+        }
+        case NO_COMMAND: {
+            Serial.println("No Command");
+            break;
+        }
+        case SETUP: {
+            Serial.println("Setup");
+            break;
+        }
+        case HOME: {
+            Serial.println("Home");
+            break;
+        }
+        case OPEN: {
+            Serial.println("Open");
+            break;
+        }
+        case CLOSE: {
+            Serial.println("Close");
+            break;
+        }
+        case PING: {
+            Serial.println("Ping");
+            break;
+        }
+        case INVALID_COMMAND: {
+            Serial.println("Invalid Command");
+            break;
+        }
+    }
 }
 
 void loop() {
-    uint8_t data;
-    for (uint8_t i = 0; i <= 255; i++) {
-        delay(500);
-        sendByte(i);
-        data = requestByte();
+    sent = commands[current_command];
 
-        Serial.print(i);
-        Serial.print(" ");
-        Serial.println(data);
-    }
+    Serial.print("Sending command: ");
+    printCommand(sent);
+    I2CController::sendCommand(8, sent);
+
+    delete response;
+    Serial.print("Receiving command: ");
+    response = I2CController::requestCommand(8);
+    printCommand(response);
+
+    current_command = (current_command + 1) % NUM_COMMANDS;
+    delay(1000);
 }

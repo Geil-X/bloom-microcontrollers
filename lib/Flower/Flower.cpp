@@ -10,11 +10,11 @@ Flower::Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs, uint8_t mosi, 
     this->enable = en;
     this->chip_select = cs;
     this->diag1 = diag1;
-    this->current_position = 0;
     this->max_steps = 0;
 }
 
-volatile bool Flower::stalled = false;
+volatile int Flower::stall_count = 0;
+volatile unsigned long Flower::stall_time = 0;
 
 // ---- Main Functions ----
 
@@ -22,8 +22,6 @@ void Flower::setup() {
     setupDriver();
     setupStepper();
 
-    setMaxSpeed(10000);
-    setAcceleration(5000);
 }
 
 void Flower::setupDriver() {
@@ -40,15 +38,15 @@ void Flower::setupDriver() {
     driver.toff(4);  // us
 
     // Set the max hardware current
-    driver.rms_current(200);  // mA
+    driver.rms_current(300);  // mA
 
     // Enable stealth chop, extremely quiet stepping
-    driver.en_pwm_mode(HIGH);
+    driver.en_pwm_mode(true);
 
     // Enable automatic current control
     // Attention: When using a user defined sine wave table, the amplitude of this sine wave table should
     // not be less than 244. Best results are obtained with 247 to 252 as peak values.
-    driver.pwm_autoscale(HIGH);
+    driver.pwm_autoscale(true);
 
     // Set driver microsteps, [1-255]
     driver.microsteps(16);
@@ -86,7 +84,7 @@ void Flower::setupDriver() {
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
     // A higher value makes stallGuard2 less sensitive and requires more torque to indicate a stall.
-    driver.sgt(30);
+    driver.sgt(50);
 
     // Enable DIAG1_PIN active on motor stall (set TCOOLTHRS before using this feature)
     driver.diag1_stall(true);
@@ -102,28 +100,22 @@ void Flower::setupStepper() {
 }
 
 /**
- * Setting the home position. There is a lot of work to be done on this function.
- *
  * A delay is required between @see moveUntilStall calls so that the stall from
  * the previous motor movement isn't carried forward to the new movement call.
- *
- * Presently, the two calls to @see moveUntilStall for the @see OPEN and
- * @see CLOSE are required for some strange quirk they always stall out
- * early before hitting the full limit.
  *
  * The last call to @see moveUntilStall with @see OPEN is to get the motor in
  * the fully open position to get the max number of steps that the motor can
  * move within.
- *
  */
 void Flower::home() {
-    int delay_ms = 500;
+    int delay_ms = 200;
 
-    // Perform an open and close routine to clear out any junk for the proper homing step
-    delay(delay_ms);
-    moveUntilStall(OPEN);
-    delay(delay_ms);
-    moveUntilStall(CLOSE);
+    // Set homing routine parameters
+    setMaxSpeed(MICROSTEPS * 2000);
+    setAcceleration(MICROSTEPS * 1000);
+    setSpeed(MICROSTEPS * 750);
+
+    clearStalls();
 
     // Fully open the motor
     delay(delay_ms);
@@ -134,16 +126,11 @@ void Flower::home() {
     max_steps = moveUntilStall(CLOSE);
 
     // Apply a boundary buffer
-    delay(delay_ms);
     int buffer_steps = (int) (max_steps * 0.05);
     moveBlocking(buffer_steps, OPEN);
-    max_steps -= buffer_steps * 2;
-    delay(delay_ms);
-
-    Serial.println(max_steps);
+    max_steps -= buffer_steps * 3;
 
     // Set the zero position for the device
-    current_position = 0;
     setZeroPosition();
 }
 
@@ -159,22 +146,32 @@ void Flower::setMaxSpeed(float speed) {
     stepper.setMaxSpeed(speed);
 }
 
+void Flower::setSpeed(float speed) {
+    stepper.setSpeed(speed);
+}
+
 void Flower::setAcceleration(float acceleration) {
     stepper.setAcceleration(acceleration);
 }
 
 void Flower::setDirection(Direction direction) {
     switch (direction) {
-        case OPEN:
-            driver.shaft(true);
-            break;
-        case CLOSE:
+        case CLOCKWISE:
             driver.shaft(false);
+            break;
+        case COUNTER_CLOCKWISE:
+            driver.shaft(true);
             break;
     }
 }
 
-// ---- Actions ----
+void Flower::setZeroPosition() {
+#if OPEN == CLOCKWISE
+    stepper.setCurrentPosition(0);
+#else
+    stepper.setCurrentPosition(max_steps);
+#endif
+}
 
 void Flower::open() {
     openTo(100);
@@ -185,16 +182,41 @@ void Flower::close() {
 }
 
 void Flower::openTo(float percentage) {
+    constrain(percentage, 0, 100);
+#if OPEN == CLOCKWISE
     int target = (int) (percentage * (max_steps / 100.));
-    int steps = abs(target - current_position);
-    Direction direction = target > current_position ? OPEN : CLOSE;
+#else
+    int target = max_steps - (int) (percentage * (max_steps / 100.));
+#endif
+    moveToBlocking(target);
+}
 
-    moveBlocking(steps, direction);
-    current_position = target;
+void Flower::openAsync() {
+    openToAsync(100);
+}
+
+void Flower::closeAsync() {
+    openToAsync(0);
+}
+
+void Flower::openToAsync(float percentage) {
+    constrain(percentage, 0, 100);
+    setDirection(CLOCKWISE);
+#if OPEN == CLOCKWISE
+    int target = (int) (percentage * (max_steps / 100.));
+#else
+    int target = max_steps - (int) (percentage * (max_steps / 100.));
+#endif
+
+    moveTo(target);
 }
 
 bool Flower::run() {
     return stepper.run();
+}
+
+bool Flower::runSpeed() {
+    return stepper.runSpeed();
 }
 
 void Flower::move(int steps, Direction direction) {
@@ -204,33 +226,28 @@ void Flower::move(int steps, Direction direction) {
 
 void Flower::moveBlocking(int steps, Direction direction) {
     move(steps, direction);
-    while (remainingDistance() != 0) {
-        run();
-    }
+    stepper.runToPosition();
+}
+
+void Flower::moveTo(int target) {
+    stepper.moveTo(target);
+}
+
+void Flower::moveToBlocking(int position) {
+    stepper.runToNewPosition(position);
 }
 
 int Flower::moveUntilStall(Direction direction) {
-    const int required_stalls = 3;
-
     int steps = 0;
-    int stalls = 0;
-    move(10000, direction);
+    setDirection(direction);
 
-    while (stalls < required_stalls) {
-        if (run()) {
-            if (motorStalled()) {
-                stalls++;
-            } else {
-                steps++;
-            }
+    while (!defaultMotorStalled()) {
+        if (runSpeed()) {
+            steps++;
         }
     }
 
-    return steps;
-}
-
-void Flower::setZeroPosition() {
-
+    return steps - CONSECUTIVE_STALLS;
 }
 
 void Flower::reverse() {
@@ -244,12 +261,33 @@ void Flower::stop() {
 // ---- Stall Detection ----
 
 void Flower::onStall() {
-    stalled = true;
+//    unsigned long current_time = millis();
+//    if (stall_time != 0 && stall_time - current_time < STALL_WINDOW) {
+    stall_count++;
+//    } else {
+//        stall_time = current_time;
+//        stall_count = 1;
+//    }
 }
 
+void Flower::clearStalls() {
+    stall_count = 0;
+    stall_time = millis();
+}
+
+#define STALL_BOUNDARY_BUFFER 200
 bool Flower::motorStalled() {
-    if (stalled) {
-        stalled = false;
+    if (stall_count >= CONSECUTIVE_STALLS) {
+        clearStalls();
+        // The motor detects stalling towards the end of a movement. Add a buffer to counteract this
+        return remainingDistance() > STALL_BOUNDARY_BUFFER;
+    }
+    return false;
+}
+
+bool Flower::defaultMotorStalled() {
+    if (stall_count >= CONSECUTIVE_STALLS) {
+        clearStalls();
         return true;
     }
     return false;

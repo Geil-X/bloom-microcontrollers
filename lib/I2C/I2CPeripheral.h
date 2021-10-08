@@ -21,8 +21,7 @@ public:
      */
     static void requestCommand();
 
-    static int device_id;
-    static Command *command;
+    volatile static Command *command;
 };
 
 #endif //FLOWER_I2CPERIPHERAL_H

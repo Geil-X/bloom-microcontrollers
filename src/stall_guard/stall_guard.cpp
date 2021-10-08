@@ -61,22 +61,18 @@ void setup() {
     // Stepper Initialization
     stepper.setMaxSpeed(10000);
     stepper.setAcceleration(5000);
+    stepper.setSpeed(5000);
 
     stepper.setEnablePin(EN_PIN);
     stepper.setPinsInverted(false, false, true);
     stepper.enableOutputs();
-
-    // Initial action
-    stepper.move(1000000);
 }
 
 void loop() {
-
     if (stalled) {
         driver.shaft(!driver.shaft());
         stalled = false;
-        stepper.move(10000);
     }
 
-    stepper.run();
+    stepper.runSpeed();
 }

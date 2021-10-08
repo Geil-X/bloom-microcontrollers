@@ -14,7 +14,7 @@ class I2CCommandFactory {
 public:
     static Command *parsePackets(Packets packets);
 
-    static Packets createPacket(Command *command);
+    static Packets createPacket(volatile Command *command);
 
     static Command *commandFromWire(int packet_size);
 };
