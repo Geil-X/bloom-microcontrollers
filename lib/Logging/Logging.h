@@ -17,4 +17,10 @@ const String RESPONSE = "Response";
  */
 void log(const String &type, const String &message);
 
+void debug(const String &message);
+void info(const String &message);
+void warn(const String &message);
+void error(const String &message);
+void response(const String &message);
+
 #endif // LOGGING_H

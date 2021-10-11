@@ -2,12 +2,16 @@
 #define COMMANDS_COMMAND_H
 
 #include <Flower.h>
+#include <Logging.h>
 
 // ---- Abstract Base Class ----
 
+/**
+ * A command object used for communicating and executing commands on a flower device.
+ */
 class Command {
 public:
-    enum Id : unsigned char {
+    enum Id : int {
         NO_COMMAND,
         SETUP,
         HOME,
@@ -21,6 +25,10 @@ public:
     };
 
     explicit Command(Id id) { this->id = id; }
+
+    virtual ~Command() = default;
+
+    virtual Command *copy() volatile = 0;
 
     virtual String toString() = 0;
 
@@ -43,7 +51,9 @@ class NoCommand : public Command {
 public:
     NoCommand() : Command(NO_COMMAND) {}
 
-    void execute(Flower &flower) override {}
+    Command *copy() volatile override { return new NoCommand(); }
+
+    void execute(Flower &flower) override { debug(toString()); }
 
     String toString() override { return "No Command"; }
 };
@@ -52,7 +62,11 @@ class InvalidCommand : public Command {
 public:
     InvalidCommand() : Command(INVALID_COMMAND) {}
 
-    void execute(Flower &flower) override {}
+    ~InvalidCommand() override = default;
+
+    Command *copy() volatile override { return new InvalidCommand(); }
+
+    void execute(Flower &flower) override { debug(toString()); }
 
     String toString() override { return "Invalid Command"; }
 };
@@ -63,7 +77,14 @@ class Setup : public Command {
 public:
     Setup() : Command(SETUP) {}
 
-    void execute(Flower &flower) override { flower.setup(); }
+    ~Setup() override = default;
+
+    Command *copy() volatile override { return new Setup(); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.setup();
+    }
 
     String toString() override { return "Setup"; }
 
@@ -73,7 +94,14 @@ class Home : public Command {
 public:
     Home() : Command(HOME) {}
 
-    void execute(Flower &flower) override { flower.home(); }
+    ~Home() override = default;
+
+    Command *copy() volatile override { return new Home(); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.home();
+    }
 
     String toString() override { return "Home"; }
 };
@@ -82,7 +110,14 @@ class Open : public Command {
 public:
     Open() : Command(OPEN) {}
 
-    void execute(Flower &flower) override { flower.open(); }
+    ~Open() override = default;
+
+    Command *copy() volatile override { return new Open(); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.openAsync();
+    }
 
     String toString() override { return "Open"; }
 };
@@ -91,31 +126,52 @@ class Close : public Command {
 public:
     Close() : Command(CLOSE) {}
 
-    void execute(Flower &flower) override { flower.close(); }
+    ~Close() override = default;
+
+    Command *copy() volatile override { return new Close(); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.closeAsync();
+    }
 
     String toString() override { return "Close"; }
 };
 
 class OpenTo : public Command {
 public:
-    explicit OpenTo(unsigned char percentage) : Command(OPEN_TO) {
-        this->percentage = percentage;
+    explicit OpenTo(int percentage) : Command(OPEN_TO) {
+        this->percentage = constrain(percentage, 0, 100);
     }
 
-    void execute(Flower &flower) override { flower.openTo(percentage); }
+    ~OpenTo() override = default;
+
+    Command *copy() volatile override { return new OpenTo(percentage); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.openToAsync((float) percentage);
+    }
 
     String toString() override { return "Open To: " + String(percentage); }
 
-    unsigned char percentage;
+    int percentage;
 };
 
 class Speed : public Command {
 public:
-    explicit Speed(unsigned char speed) : Command(SPEED) {
+    explicit Speed(int speed) : Command(SPEED) {
         this->speed = speed;
     }
 
-    void execute(Flower &flower) override { flower.setMaxSpeed(speed); }
+    ~Speed() override = default;
+
+    Command *copy() volatile override { return new Speed(speed); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.setMaxSpeed((float) speed);
+    }
 
     String toString() override { return "Speed: " + String(speed); }
 
@@ -127,16 +183,23 @@ public:
         return !(lhs == rhs);
     }
 
-    unsigned char speed;
+    int speed;
 };
 
 class Acceleration : public Command {
 public:
-    explicit Acceleration(unsigned char acceleration) : Command(ACCELERATION) {
+    explicit Acceleration(int acceleration) : Command(ACCELERATION) {
         this->acceleration = acceleration;
     }
 
-    void execute(Flower &flower) override { flower.setAcceleration(acceleration); }
+    ~Acceleration() override = default;
+
+    Command *copy() volatile override { return new Acceleration(acceleration); }
+
+    void execute(Flower &flower) override {
+        debug(toString());
+        flower.setAcceleration((float) acceleration);
+    }
 
     String toString() override { return "Acceleration: " + String(acceleration); }
 
@@ -148,14 +211,18 @@ public:
         return !(lhs == rhs);
     }
 
-    unsigned char acceleration;
+    int acceleration;
 };
 
 class Ping : public Command {
 public:
     Ping() : Command(PING) {}
 
-    void execute(Flower &flower) override { }
+    ~Ping() override = default;
+
+    Command *copy() volatile override { return new Ping(); }
+
+    void execute(Flower &flower) override { debug(toString()); }
 
     String toString() override { return "Ping"; }
 };

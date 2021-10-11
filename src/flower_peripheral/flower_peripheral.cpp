@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <I2CPeripheral.h>
 
-
 // Stepper Pins
 #define DIAG1_PIN   3
 #define EN_PIN      7
@@ -19,13 +18,25 @@
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
 Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, R_SENSE);
+Command *command;
 
 void setup() {
+    Serial.begin(9600);
+    Serial.println("Running...");
+
     I2CPeripheral::join(DEVICE_ID);
+
+    flower.setup();
+    flower.home();
 }
 
 void loop() {
-    if (I2CPeripheral::command != nullptr) {
-        I2CPeripheral::command->execute(flower);
+    command = I2CPeripheral::tryGetCommand();
+
+    if (command != nullptr) {
+        command->execute(flower);
+        delete command;
     }
+
+    flower.run();
 }

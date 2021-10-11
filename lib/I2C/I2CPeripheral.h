@@ -21,6 +21,8 @@ public:
      */
     static void requestCommand();
 
+    static Command* tryGetCommand();
+
     volatile static Command *command;
 };
 

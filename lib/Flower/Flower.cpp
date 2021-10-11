@@ -49,7 +49,7 @@ void Flower::setupDriver() {
     driver.pwm_autoscale(true);
 
     // Set driver microsteps, [1-255]
-    driver.microsteps(16);
+    driver.microsteps(MICROSTEPS);
 
     // Minimum stallGuard2 value for smart current control and smart current enable
     // If the stallGuard2 result falls below SEMIN*32,
