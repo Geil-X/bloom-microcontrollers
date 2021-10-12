@@ -21,9 +21,6 @@ Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, R_SENS
 Command *command;
 
 void setup() {
-    Serial.begin(9600);
-    Serial.println("Running...");
-
     I2CPeripheral::join(DEVICE_ID);
 
     flower.setup();
