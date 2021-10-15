@@ -2,8 +2,8 @@
 
 #include <Wire.h>
 
-Command *I2CCommandFactory::parsePackets(Packets packets) {
-    auto commandId = (Command::Id) packets.data[0];
+Command *I2CCommandFactory::parsePacket(Packet packet) {
+    auto commandId = (Command::Id) packet.data[0];
     switch (commandId) {
         case Command::SETUP:
             return new Setup();
@@ -14,11 +14,12 @@ Command *I2CCommandFactory::parsePackets(Packets packets) {
         case Command::CLOSE:
             return new Close();
         case Command::OPEN_TO:
-            return new OpenTo(packetToUint16(packets.data[1], packets.data[2]));
+            return new OpenTo(packetToFloat(
+                    packet.data[1], packet.data[2], packet.data[3], packet.data[4]));
         case Command::SPEED:
-            return new Speed(packetToUint16(packets.data[1], packets.data[2]));
+            return new Speed(packetToInt(packet.data[1], packet.data[2]));
         case Command::ACCELERATION:
-            return new Acceleration(packetToUint16(packets.data[1], packets.data[2]));
+            return new Acceleration(packetToInt(packet.data[1], packet.data[2]));
         case Command::PING:
             return new Ping();
         case Command::NO_COMMAND:
@@ -28,36 +29,30 @@ Command *I2CCommandFactory::parsePackets(Packets packets) {
     }
 }
 
-Packets I2CCommandFactory::createPacket(volatile Command *command) {
-    Packets packets = {};
+Packet I2CCommandFactory::createPacket(volatile Command *command) {
+    Packet packet = {};
     if (command == nullptr) {
-        packets.data[0] = Command::INVALID_COMMAND;
-        return packets;
+        packet.data[0] = Command::INVALID_COMMAND;
+        return packet;
     }
-
+    auto commandId = (unsigned char) command->id;
     switch (command->id) {
         case Command::OPEN_TO: {
             auto *openTo = (OpenTo *) command;
-            Packet_uint16_t percentagePacket = uint16ToPacket(openTo->percentage);
-            packets.data[0] = openTo->id;
-            packets.data[1] = percentagePacket.byte1;
-            packets.data[2] = percentagePacket.byte2;
+            writeToPacket(commandId, packet, 0);
+            writeToPacket(openTo->percentage, packet, 1);
             break;
         }
         case Command::SPEED: {
             auto speed = (Speed *) command;
-            Packet_uint16_t speedPacket = uint16ToPacket(speed->speed);
-            packets.data[0] = speed->id;
-            packets.data[1] = speedPacket.byte1;
-            packets.data[2] = speedPacket.byte2;
+            writeToPacket(commandId, packet, 0);
+            writeToPacket(speed->speed, packet, 1);
             break;
         }
         case Command::ACCELERATION: {
             auto acceleration = (Acceleration *) command;
-            Packet_uint16_t accelerationPacket = uint16ToPacket(acceleration->acceleration);
-            packets.data[0] = acceleration->id;
-            packets.data[1] = accelerationPacket.byte1;
-            packets.data[2] = accelerationPacket.byte2;
+            writeToPacket(commandId, packet, 0);
+            writeToPacket(acceleration->acceleration, packet, 1);
             break;
         }
         case Command::NO_COMMAND:
@@ -67,29 +62,70 @@ Packets I2CCommandFactory::createPacket(volatile Command *command) {
         case Command::CLOSE:
         case Command::PING:
         case Command::INVALID_COMMAND:
-            packets.data[0] = (unsigned char) command->id;
+            writeToPacket(commandId, packet, 0);
             break;
     }
 
-    return packets;
+    return packet;
 }
 
 Command *I2CCommandFactory::commandFromWire(int packet_size) {
-    Packets packets = {};
+    Packet packets = {};
     int packet_index = 0;
     while (Wire.available() && packet_index < packet_size && packet_index < MAX_I2C_DATA_SIZE) {
         packets.data[packet_index] = Wire.read();
         packet_index++;
     }
-    return parsePackets(packets);
+    return parsePacket(packets);
 }
 
-Packet_uint16_t I2CCommandFactory::uint16ToPacket(uint16_t value) {
-    return Packet_uint16_t{(uint8_t) (value >> 8), (uint8_t) value};
+UInt16Packet I2CCommandFactory::toPacket(int value) {
+    return UInt16Packet{(uint8_t) (value >> 8), (uint8_t) value};
 }
 
-uint16_t I2CCommandFactory::packetToUint16(uint8_t byte1, uint8_t byte2) {
+UInt32Packet I2CCommandFactory::toPacket(float value) {
+    FloatConversion floatToInt{};
+    floatToInt.f = value;
+
+    return UInt32Packet{
+            (uint8_t) (floatToInt.i >> 24),
+            (uint8_t) (floatToInt.i >> 16),
+            (uint8_t) (floatToInt.i >> 8),
+            (uint8_t) floatToInt.i
+    };
+}
+
+int I2CCommandFactory::packetToInt(uint8_t byte1, uint8_t byte2) {
     return
             (((uint16_t) byte1) << 8) +
             ((uint16_t) byte2);
+}
+
+float I2CCommandFactory::packetToFloat(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4) {
+    FloatConversion intToFloat{};
+    intToFloat.i =
+            (((uint32_t) byte1) << 24) +
+            (((uint32_t) byte2) << 16) +
+            (((uint32_t) byte3) << 8) +
+            ((uint32_t) byte4);
+
+    return intToFloat.f;
+}
+
+void I2CCommandFactory::writeToPacket(unsigned char value, Packet &packet, int position) {
+    packet.data[position] = value;
+}
+
+void I2CCommandFactory::writeToPacket(int value, Packet &packet, int position) {
+    UInt16Packet floatPacket = toPacket(value);
+    packet.data[position] = floatPacket.byte1;
+    packet.data[position + 1] = floatPacket.byte2;
+}
+
+void I2CCommandFactory::writeToPacket(float value, Packet &packet, int position) {
+    UInt32Packet floatPacket = toPacket(value);
+    packet.data[position] = floatPacket.byte1;
+    packet.data[position + 1] = floatPacket.byte2;
+    packet.data[position + 2] = floatPacket.byte3;
+    packet.data[position + 3] = floatPacket.byte4;
 }

@@ -4,8 +4,13 @@
 #include <AccelStepper.h>
 #include <TMCStepper.h>
 
-#define MICROSTEPS 16
 
+// Toggle between the two modes of operation
+// If both are enabled, OPEN_CLOCKWISE wins
+//#define OPEN_CLOCKWISE
+#define OPEN_COUNTERCLOCKWISE
+
+#define MICROSTEPS 16
 
 // The number of consecutive stalls needed to consider the motor to have stalled
 #define CONSECUTIVE_STALLS 5
@@ -14,19 +19,23 @@
 #define STALL_WINDOW 10 // ms
 
 enum Direction {
-    CLOCKWISE,
-    COUNTER_CLOCKWISE,
-    OPEN = CLOCKWISE,
-    CLOSE = COUNTER_CLOCKWISE
-    // For reversing motor direction
-    // CLOSE = CLOCKWISE,
-    // OPEN = COUNTER_CLOCKWISE
+    DIRECTION_CLOCKWISE,
+    DIRECTION_COUNTERCLOCKWISE,
+#if defined(OPEN_CLOCKWISE)
+    // For clockwise open
+    DIRECTION_OPEN = DIRECTION_CLOCKWISE,
+    DIRECTION_CLOSE = DIRECTION_COUNTERCLOCKWISE
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    // For counterclockwise open
+    DIRECTION_CLOSE = DIRECTION_CLOCKWISE,
+    DIRECTION_OPEN = DIRECTION_COUNTERCLOCKWISE
+#endif
 };
 
 class Flower {
 public:
-    Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs, uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1,
-           float rSense);
+    Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
+           uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1);
 
 
     // Main Functions
@@ -38,9 +47,22 @@ public:
      * Perform the homing sequence for the flower. This lets the flower know
      * where it's boundaries of movement are.
      *
-     * Note: this function is blocking.
+     * @note This function is blocking and resets the max-speed and acceleration
+     *       that were previously set. You will need to reset them after calling
+     *       this function.
      */
     void home();
+
+    /**
+     * Find the boundary of the device for resetting the zero position.  This
+     * function is intended to be used after the initial home has already been
+     * performed but step was skipped or a stall was detected. This routine will
+     * reset the zero position and keep the old step range from the original home
+     * sequence.
+     *
+     * @note This function is blocking.
+     */
+//    void rehome();
 
 
     // Accessors
@@ -112,9 +134,6 @@ public:
      * */
     bool motorStalled();
 
-    bool defaultMotorStalled();
-
-
 private:
     // Setup Functions
 
@@ -173,8 +192,6 @@ private:
 
     /** Variable that stores the stall state of the flower. */
     volatile static int stall_count;
-    volatile static unsigned long stall_time;
-
 
     // Driver objects
     TMC2130Stepper driver;
@@ -182,6 +199,8 @@ private:
 
     // Pins
     uint8_t enable;
+    uint8_t direction;
+    uint8_t step;
     uint8_t chip_select;
     uint8_t diag1;
 

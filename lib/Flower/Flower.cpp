@@ -2,19 +2,31 @@
 
 using namespace TMC2130_n;
 
-Flower::Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs, uint8_t mosi, uint8_t miso, uint8_t sck,
-               uint8_t diag1, float rSense)
-        : driver(cs, rSense, mosi, miso, sck), stepper(stepper.DRIVER, step, dir) {
+// TMC2130 Parameters
+#define R_SENSE 0.11f  // Set for the silent step stick series
+
+enum SPREAD_CYCLE {
+    SPREAD_CYCLE_ENABLED = 0,
+    SPREAD_CYCLE_DISABLED = 1
+};
+
+
+Flower::Flower(
+        uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
+        uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1)
+        : driver(cs, R_SENSE, mosi, miso, sck),
+          stepper(stepper.DRIVER, step, dir) {
 
     // Pin initialization
     this->enable = en;
     this->chip_select = cs;
     this->diag1 = diag1;
+    this->direction = dir;
+    this->step = step;
     this->max_steps = 0;
 }
 
 volatile int Flower::stall_count = 0;
-volatile unsigned long Flower::stall_time = 0;
 
 // ---- Main Functions ----
 
@@ -28,7 +40,16 @@ void Flower::setupDriver() {
     // Enable the chip select pin
     pinMode(diag1, INPUT);
     pinMode(chip_select, OUTPUT);
+    pinMode(enable, OUTPUT);
+    pinMode(direction, OUTPUT);
+    pinMode(step, OUTPUT);
+
     digitalWrite(chip_select, HIGH);
+    digitalWrite(enable, HIGH);  // Deactivate driver (Enable Low)
+    digitalWrite(direction, LOW);  //LOW or HIGH
+    digitalWrite(step, LOW);
+
+    pinMode(MISO, INPUT_PULLUP);
 
     // Initiate pins and registers
     driver.begin();
@@ -37,8 +58,16 @@ void Flower::setupDriver() {
     // N_CLK= 12 + 32*TOFF
     driver.toff(4);  // us
 
+    // Set comparator blank time to 16, 24, 36 or 54 clocks
+    // Range: %00 … %11:
+    // Hint: %01 or %10 is recommended for most applications
+    driver.tbl(1);
+
     // Set the max hardware current
     driver.rms_current(300);  // mA
+
+    // Set driver microsteps, [1-255]
+    driver.microsteps(MICROSTEPS);
 
     // Enable stealth chop, extremely quiet stepping
     driver.en_pwm_mode(true);
@@ -48,8 +77,55 @@ void Flower::setupDriver() {
     // not be less than 244. Best results are obtained with 247 to 252 as peak values.
     driver.pwm_autoscale(true);
 
-    // Set driver microsteps, [1-255]
-    driver.microsteps(MICROSTEPS);
+    // User defined amplitude
+    // pwm_autoscale = 0
+    //     User defined PWM amplitude offset (0-255)
+    //     The resulting amplitude (limited to 0…255)
+    //     is: PWM_AMPL + PWM_GRAD * 256 / TSTEP
+    // pwm_autoscale = 1
+    //     User defined maximum PWM amplitude when switching back from current chopper
+    //     mode to voltage PWM mode (switch over velocity defined by TPWMTHRS). Do not set
+    //     too low values, as the regulation cannot measure the current when the actual PWM
+    //     value goes below a setting specific value. Settings above 0x40 recommended.
+    driver.pwm_ampl(255);
+
+    //  chm=0 %000 … %111:
+    //     Add 1, 2, …, 8 to hysteresis low value HEND (1/512 of this setting adds to current setting)
+    //     Attention: Effective HEND+HSTRT ≤ 16.
+    //     Hint: Hysteresis decrement is done each 16 clocks
+    //  chm=1 %0000 … %1111:
+    //     Fast decay time setting (MSB: fd3):
+    //     Fast decay time setting TFD with NCLK= 32*TFD (%0000: slow decay only)
+    driver.hysteresis_start(4);
+
+    // chm=1 %0000 … %1111:
+    //     Offset is -3, -2, -1, 0, 1, …, 12
+    //     This is the sine wave offset and 1/512 of the value becomes added to the absolute value
+    //     of each sine wave entry.
+    // chm=0 %0000 … %1111:
+    //     Hysteresis is -3, -2, -1, 0, 1, …, 12 (1/512 of this setting adds to current setting)
+    //     This is the hysteresis value which becomes used for the hysteresis chopper.
+    driver.hysteresis_end(0);
+
+    // Set the chopper mode
+    // - SPREAD_CYCLE_ENABLED, 0:
+    //     Standard mode (spreadCycle)
+    // - SPREAD_CYCLE_DISABLED, 1:
+    //     Constant off time with fast decay time.
+    //     Fast decay time is also terminated when the
+    //     negative nominal current is reached. Fast decay is
+    //     after on time.
+    driver.chm(SPREAD_CYCLE_ENABLED);
+
+    // 20bit max. Lower velocity threshold for switching on smart energy coolStep and stall guard
+    // Needs to be enabled before activating DIAG1_PIN on motor stall
+    driver.TCOOLTHRS(0xFFFFF);
+
+    // This velocity setting allows velocity dependent switching into a different chopper mode and
+    // full stepping to maximize torque. (unsigned)
+    // The stall detection feature becomes switched off for 2-3 electrical periods whenever passing
+    // THIGH threshold to compensate for the effect of switching modes.
+    driver.THIGH(0);
 
     // Minimum stallGuard2 value for smart current control and smart current enable
     // If the stallGuard2 result falls below SEMIN*32,
@@ -69,16 +145,6 @@ void Flower::setupDriver() {
     // 0b11: For each stallGuard2 value decrease by one
     driver.sedn(0b01);
 
-    // 20bit max. Lower velocity threshold for switching on smart energy coolStep and stall guard
-    // Needs to be enabled before activating DIAG1_PIN on motor stall
-    driver.TCOOLTHRS(0xFFFFF);
-
-    // This velocity setting allows velocity dependent switching into a different chopper mode and
-    // full stepping to maximize torque. (unsigned)
-    // The stall detection feature becomes switched off for 2-3 electrical periods whenever passing
-    // THIGH threshold to compensate for the effect of switching modes.
-    driver.THIGH(0);
-
     // This signed value controls stallGuard2 level for stall output and sets the optimum
     // measurement range for readout. A lower value gives a higher sensitivity. Zero is the
     // starting value working with most motors.
@@ -91,6 +157,7 @@ void Flower::setupDriver() {
     driver.diag1_pushpull(true);  // Active high
 
     attachInterrupt(digitalPinToInterrupt(diag1), Flower::onStall, RISING);
+
 }
 
 void Flower::setupStepper() {
@@ -119,26 +186,29 @@ void Flower::home() {
 
     // Fully open the motor
     delay(delay_ms);
-    moveUntilStall(OPEN);
+    moveUntilStall(DIRECTION_OPEN);
 
     // Fully close the motor and get the number of steps for a full swing
     delay(delay_ms);
-    max_steps = moveUntilStall(CLOSE);
+    max_steps = moveUntilStall(DIRECTION_CLOSE);
 
     // Apply a boundary buffer
     int buffer_steps = (int) (max_steps * 0.05);
-    moveBlocking(buffer_steps, OPEN);
+    moveBlocking(buffer_steps, DIRECTION_OPEN);
     max_steps -= buffer_steps * 3;
 
     // Set the zero position for the device
     setZeroPosition();
+    moveTo((int) stepper.currentPosition());
 }
+
 
 // ---- Accessor Functions ----
 
 long Flower::remainingDistance() {
     return stepper.distanceToGo();
 }
+
 
 // ---- Modifier Functions ----
 
@@ -156,19 +226,19 @@ void Flower::setAcceleration(float acceleration) {
 
 void Flower::setDirection(Direction direction) {
     switch (direction) {
-        case CLOCKWISE:
+        case DIRECTION_CLOCKWISE:
             driver.shaft(false);
             break;
-        case COUNTER_CLOCKWISE:
+        case DIRECTION_COUNTERCLOCKWISE:
             driver.shaft(true);
             break;
     }
 }
 
 void Flower::setZeroPosition() {
-#if OPEN == CLOCKWISE
+#if defined(OPEN_CLOCKWISE)
     stepper.setCurrentPosition(0);
-#else
+#elif defined(OPEN_COUNTERCLOCKWISE)
     stepper.setCurrentPosition(max_steps);
 #endif
 }
@@ -183,9 +253,9 @@ void Flower::close() {
 
 void Flower::openTo(float percentage) {
     constrain(percentage, 0, 100);
-#if OPEN == CLOCKWISE
+#if defined(OPEN_CLOCKWISE)
     int target = (int) (percentage * (max_steps / 100.));
-#else
+#elif defined(OPEN_COUNTERCLOCKWISE)
     int target = max_steps - (int) (percentage * (max_steps / 100.));
 #endif
     moveToBlocking(target);
@@ -201,10 +271,10 @@ void Flower::closeAsync() {
 
 void Flower::openToAsync(float percentage) {
     constrain(percentage, 0, 100);
-    setDirection(CLOCKWISE);
-#if OPEN == CLOCKWISE
+    setDirection(DIRECTION_CLOCKWISE);
+#if defined(OPEN_CLOCKWISE)
     int target = (int) (percentage * (max_steps / 100.));
-#else
+#elif defined(OPEN_COUNTERCLOCKWISE)
     int target = max_steps - (int) (percentage * (max_steps / 100.));
 #endif
 
@@ -241,7 +311,7 @@ int Flower::moveUntilStall(Direction direction) {
     int steps = 0;
     setDirection(direction);
 
-    while (!defaultMotorStalled()) {
+    while (!motorStalled()) {
         if (runSpeed()) {
             steps++;
         }
@@ -261,34 +331,18 @@ void Flower::stop() {
 // ---- Stall Detection ----
 
 void Flower::onStall() {
-//    unsigned long current_time = millis();
-//    if (stall_time != 0 && stall_time - current_time < STALL_WINDOW) {
     stall_count++;
-//    } else {
-//        stall_time = current_time;
-//        stall_count = 1;
-//    }
 }
 
 void Flower::clearStalls() {
     stall_count = 0;
-    stall_time = millis();
 }
 
-#define STALL_BOUNDARY_BUFFER 200
 bool Flower::motorStalled() {
-    if (stall_count >= CONSECUTIVE_STALLS) {
-        clearStalls();
-        // The motor detects stalling towards the end of a movement. Add a buffer to counteract this
-        return remainingDistance() > STALL_BOUNDARY_BUFFER;
-    }
-    return false;
-}
-
-bool Flower::defaultMotorStalled() {
     if (stall_count >= CONSECUTIVE_STALLS) {
         clearStalls();
         return true;
     }
     return false;
 }
+

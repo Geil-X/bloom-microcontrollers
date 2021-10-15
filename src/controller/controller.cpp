@@ -31,7 +31,7 @@ void loop() {
     I2CController::sendCommand(8, sent);
 
     delete response;
-    response = I2CController::requestCommand(8);
+    response = I2CController::requestCommand(16);
     Serial.println("Receiving command: " + response->toString());
 
     current_command = (current_command + 1) % NUM_COMMANDS;

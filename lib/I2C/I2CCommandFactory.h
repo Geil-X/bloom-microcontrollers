@@ -5,29 +5,49 @@
 #include <Command.h>
 
 // This tells the I2C controllers how long the expected message should be.
-#define MAX_I2C_DATA_SIZE 3
+#define MAX_I2C_DATA_SIZE 5
 
-struct Packets {
-    unsigned char data[MAX_I2C_DATA_SIZE];
+union FloatConversion {
+    float f;
+    uint32_t i;
 };
 
-struct Packet_uint16_t {
-    uint8_t byte1;  // Left 8 bits, NNNNNNNNxxxxxxxx
-    uint8_t byte2;  // Right 8 bits, xxxxxxxxNNNNNNNN
+struct Packet {
+    uint8_t data[MAX_I2C_DATA_SIZE];
+};
+
+struct UInt16Packet {
+    uint8_t byte1;
+    uint8_t byte2;
+};
+
+struct UInt32Packet {
+    uint8_t byte1;
+    uint8_t byte2;
+    uint8_t byte3;
+    uint8_t byte4;
 };
 
 class I2CCommandFactory {
 public:
 
-    static Command *parsePackets(Packets packets);
+    static Command *parsePacket(Packet packet);
 
-    static Packets createPacket(volatile Command *command);
+    static Packet createPacket(volatile Command *command);
 
     static Command *commandFromWire(int packet_size);
 
-    static Packet_uint16_t uint16ToPacket(uint16_t value);
 
-    static uint16_t packetToUint16(uint8_t byte1, uint8_t byte2);
+private:
+    static UInt16Packet toPacket(int value);
+    static UInt32Packet toPacket(float value);
+
+    static int packetToInt(uint8_t byte1, uint8_t byte2);
+    static float packetToFloat(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4);
+
+    static void writeToPacket(unsigned char value, Packet& packet, int position);
+    static void writeToPacket(int value, Packet& packet, int position);
+    static void writeToPacket(float value, Packet& packet, int position);
 };
 
 #endif //FLOWER_I2CCOMMANDFACTORY_H

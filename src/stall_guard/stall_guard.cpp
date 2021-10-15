@@ -36,14 +36,26 @@ void setup() {
     // Driver Initialization
     pinMode(DIAG1_PIN, INPUT);
     pinMode(CS_PIN, OUTPUT);
+    pinMode(EN_PIN, OUTPUT);
+    pinMode(DIR_PIN, OUTPUT);
+    pinMode(STEP_PIN, OUTPUT);
+
     digitalWrite(CS_PIN, HIGH);
+    digitalWrite(EN_PIN, HIGH);
+    digitalWrite(DIR_PIN, LOW); //LOW or HIGH
+    digitalWrite(STEP_PIN, LOW);
+    pinMode(MISO, INPUT_PULLUP);
 
     driver.begin();
     driver.toff(4);  // us
-    driver.rms_current(200);
+    driver.tbl(1);
+    driver.rms_current(300);
+    driver.microsteps(16);
     driver.en_pwm_mode(true);
     driver.pwm_autoscale(true);
-    driver.microsteps(16);
+    driver.pwm_ampl(255);
+    driver.hysteresis_start(4);
+    driver.hysteresis_start(0);
     driver.semin(5);
     driver.semax(2);
     driver.sedn(0b01);
@@ -52,7 +64,7 @@ void setup() {
     driver.THIGH(0);
 
     // Stall detection
-    driver.sgt(63);
+    driver.sgt(60);
     driver.diag1_stall(true);
     driver.diag1_pushpull(true);  // Active high
 

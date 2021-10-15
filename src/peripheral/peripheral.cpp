@@ -2,7 +2,7 @@
 #include <I2CPeripheral.h>
 
 void setup() {
-    I2CPeripheral::join(8);
+    I2CPeripheral::join(16);
 }
 
 void loop() {

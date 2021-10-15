@@ -1,5 +1,9 @@
 #include <Arduino.h>
 #include <I2CPeripheral.h>
+#include <Debug.h>
+
+// I2C Communication
+#define DEVICE_ID 16  // I2C Address
 
 // Stepper Pins
 #define DIAG1_PIN   3
@@ -8,16 +12,12 @@
 #define STEP    9
 #define CS      10
 
-// SPI Communication
+// Stepper Driver SPI Communication
 #define MOSI    11  // SDI
 #define MISO    12  // SDO
 #define SCK     13  // SPI Reference Clock
-#define DEVICE_ID 16  // I2C Address
 
-// TMC2130 Parameters
-#define R_SENSE 0.11f  // Set for the silent step stick series
-
-Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, R_SENSE);
+Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN);
 Command *command;
 
 void setup() {

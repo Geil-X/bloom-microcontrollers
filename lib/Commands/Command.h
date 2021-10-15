@@ -11,7 +11,7 @@
  */
 class Command {
 public:
-    enum Id : int {
+    enum Id : unsigned char {
         NO_COMMAND,
         SETUP,
         HOME,
@@ -53,7 +53,7 @@ public:
 
     Command *copy() volatile override { return new NoCommand(); }
 
-    void execute(Flower &flower) override { debug(toString()); }
+    void execute(Flower &flower) override {}
 
     String toString() override { return "No Command"; }
 };
@@ -66,7 +66,7 @@ public:
 
     Command *copy() volatile override { return new InvalidCommand(); }
 
-    void execute(Flower &flower) override { debug(toString()); }
+    void execute(Flower &flower) override {}
 
     String toString() override { return "Invalid Command"; }
 };
@@ -82,7 +82,6 @@ public:
     Command *copy() volatile override { return new Setup(); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.setup();
     }
 
@@ -99,7 +98,6 @@ public:
     Command *copy() volatile override { return new Home(); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.home();
     }
 
@@ -115,7 +113,6 @@ public:
     Command *copy() volatile override { return new Open(); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.openAsync();
     }
 
@@ -131,7 +128,6 @@ public:
     Command *copy() volatile override { return new Close(); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.closeAsync();
     }
 
@@ -140,7 +136,7 @@ public:
 
 class OpenTo : public Command {
 public:
-    explicit OpenTo(int percentage) : Command(OPEN_TO) {
+    explicit OpenTo(float percentage) : Command(OPEN_TO) {
         this->percentage = constrain(percentage, 0, 100);
     }
 
@@ -149,13 +145,12 @@ public:
     Command *copy() volatile override { return new OpenTo(percentage); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.openToAsync((float) percentage);
     }
 
     String toString() override { return "Open To: " + String(percentage); }
 
-    int percentage;
+    float percentage;
 };
 
 class Speed : public Command {
@@ -169,7 +164,6 @@ public:
     Command *copy() volatile override { return new Speed(speed); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.setMaxSpeed((float) speed);
     }
 
@@ -197,7 +191,6 @@ public:
     Command *copy() volatile override { return new Acceleration(acceleration); }
 
     void execute(Flower &flower) override {
-        debug(toString());
         flower.setAcceleration((float) acceleration);
     }
 
@@ -222,7 +215,7 @@ public:
 
     Command *copy() volatile override { return new Ping(); }
 
-    void execute(Flower &flower) override { debug(toString()); }
+    void execute(Flower &flower) override {}
 
     String toString() override { return "Ping"; }
 };

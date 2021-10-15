@@ -13,35 +13,35 @@
 #define MISO    12  // SDO
 #define SCK     13  // SPI Reference Clock
 
-// TMC2130 Parameters
-#define R_SENSE 0.11f  // Set for the silent step stick series
+Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN);
+Direction previous_position = DIRECTION_CLOSE;
 
-Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, R_SENSE);
-Direction previous_position = CLOSE;
+void setSpeed() {
+    flower.setMaxSpeed(MICROSTEPS * 1000);
+    flower.setAcceleration(MICROSTEPS * 200);
+}
 
 void setup() {
     Serial.begin(9600);
 
     flower.setup();
     flower.home();
-
-    flower.setMaxSpeed(MICROSTEPS * 1000);
-    flower.setAcceleration(MICROSTEPS * 300);
+    setSpeed();
 }
 
 void loop() {
     if (flower.remainingDistance() == 0) {
         switch (previous_position) {
-            case OPEN: {
+            case DIRECTION_OPEN: {
                 Serial.println("Close");
                 flower.closeAsync();
-                previous_position = CLOSE;
+                previous_position = DIRECTION_CLOSE;
                 break;
             }
-            case CLOSE: {
+            case DIRECTION_CLOSE: {
                 Serial.println("Open");
                 flower.openAsync();
-                previous_position = OPEN;
+                previous_position = DIRECTION_OPEN;
                 break;
             }
         }
@@ -50,6 +50,9 @@ void loop() {
     if (flower.motorStalled()) {
         delay(1000);
         flower.home();
+        setSpeed();
+        flower.closeAsync();
+        previous_position = DIRECTION_CLOSE;
     }
 
     flower.run();

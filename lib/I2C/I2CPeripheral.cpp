@@ -29,6 +29,6 @@ Command *I2CPeripheral::tryGetCommand() {
 }
 
 void I2CPeripheral::requestCommand() {
-    Packets packets = I2CCommandFactory::createPacket(command);
-    Wire.write(packets.data, MAX_I2C_DATA_SIZE);
+    Packet packet = I2CCommandFactory::createPacket(command);
+    Wire.write(packet.data, MAX_I2C_DATA_SIZE);
 }

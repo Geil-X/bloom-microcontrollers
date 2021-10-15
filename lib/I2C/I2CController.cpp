@@ -5,9 +5,9 @@ void I2CController::join () {
 }
 
 void I2CController::sendCommand(int device, Command* command) {
-    Packets packets = I2CCommandFactory::createPacket(command);
+    Packet packet = I2CCommandFactory::createPacket(command);
     Wire.beginTransmission(device);
-    Wire.write(packets.data, MAX_I2C_DATA_SIZE);
+    Wire.write(packet.data, MAX_I2C_DATA_SIZE);
     Wire.endTransmission();
 }
 

@@ -1,24 +1,34 @@
 # I2C Command Data Packets
 
-I2C Communication packet is 3 bytes long.
+I2C Communication packet is 5 bytes long. There are 3 different types of commands that are sent. Each of which use different lengths of communications.
 
-| Command Id | Integer Byte 1 (MSB) | Integer Byte 2 (LSB) |
-|---|---|---|
+- Generic Command `1 Byte`
+- Integer Command `3 Bytes`
+- Float Command `5 Bytes`
+
+The first byte is always used by the command ID but the following are used as the data bits for the integer which takes up 2 bytes or for the floating point numer which takes up 4 bytes.
+
+
+| Type            | Byte 1     | Byte 2 | Byte 3 | Byte 4 | Byte 5 |
+|-----------------|------------|--------|--------|--------|--------|
+| Generic Command | Command ID |
+| Integer Command | Command ID | Integer Byte 1 | Integer Byte 2
+| Float Command   | Command ID | Float Byte 1 | Float Byte 2 | Float Byte 3 | Float Byte 4
 
 ## Command Breakdown
 
-| Command         | Id                  | Integer Value |
-|-----------------|---------------------|---------------|
-| No Command      | NO_COMMAND = 0      | |
-| Setup           | SETUP = 1           | |
-| Home            | HOME = 2            | |
-| Open            | OPEN = 3            | |
-| Close           | CLOSE = 4           | |
-| Open To         | OPEN_TO  = 5        | Percentage out of 100 |
-| Speed           | SPEED = 6           | New Speed (microsteps/s) |
-| Acceleration    | ACCELERATION = 7    | New Acceleration (microsteps/s^2) |
-| Ping            | PING = 8            | |
-| Invalid Command | INVALID_COMMAND = 9 | |
+| Command         | Type    | Id                  | Value
+|-----------------|---------| --------------------|---
+| No Command      | Generic | NO_COMMAND = 0      |
+| Setup           | Generic | SETUP = 1           |
+| Home            | Generic | HOME = 2            |
+| Open            | Generic | OPEN = 3            |
+| Close           | Generic | CLOSE = 4           |
+| Open To         | Float   | OPEN_TO  = 5        | Float Percentage out of 100
+| Speed           | Integer | SPEED = 6           | New Speed (microsteps/s)
+| Acceleration    | Integer | ACCELERATION = 7    | New Acceleration (microsteps/s^2)
+| Ping            | Integer | PING = 8            |
+| Invalid Command | Generic | INVALID_COMMAND = 9 |
 
 # I2C Reserved Addresses
 

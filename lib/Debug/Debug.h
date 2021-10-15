@@ -7,6 +7,8 @@ extern "C" {
 
 int freeMemory();
 
+int availableMemory();
+
 #ifdef  __cplusplus
 }
 #endif
