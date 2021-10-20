@@ -2,7 +2,7 @@
 #define FLOWER_POTENTIOMETERBUTTON_H
 
 #include <Arduino.h>
-#include <Button.h>
+#include "Button.h"
 
 
 class PotentiometerButton : public Button {

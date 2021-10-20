@@ -2,6 +2,7 @@
 #define FLOWER_I2CPERIPHERAL_H
 
 #include <Command.h>
+#include <I2CCommandFactory.h>
 
 class I2CPeripheral {
 public:
@@ -11,19 +12,15 @@ public:
      */
     static void join(int device);
 
+    static void executeCommand(Flower &flower);
+
+private:
     /**
      * Receive a command through the I2C bus and assign it to the #command variable.
      */
     static void receiveCommand(int);
 
-    /**
-     * Send the currently held command to the controller when requested.
-     */
-    static void requestCommand();
-
-    static Command* tryGetCommand();
-
-    volatile static Command *command;
+    static Packet packet;
 };
 
 #endif //FLOWER_I2CPERIPHERAL_H

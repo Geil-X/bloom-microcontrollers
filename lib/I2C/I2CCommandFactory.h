@@ -7,13 +7,13 @@
 // This tells the I2C controllers how long the expected message should be.
 #define MAX_I2C_DATA_SIZE 5
 
+struct Packet {
+    uint8_t data[MAX_I2C_DATA_SIZE];
+};
+
 union FloatConversion {
     float f;
     uint32_t i;
-};
-
-struct Packet {
-    uint8_t data[MAX_I2C_DATA_SIZE];
 };
 
 struct UInt16Packet {
@@ -30,12 +30,20 @@ struct UInt32Packet {
 
 class I2CCommandFactory {
 public:
+    static void executePacket(Packet packet, Flower &flower);
 
-    static Command *parsePacket(Packet packet);
+    static Packet setupPacket();
+    static Packet homePacket();
+    static Packet openPacket();
+    static Packet closePacket();
+    static Packet openToPacket(float percentage);
+    static Packet speedPacket(int percentage);
+    static Packet accelerationPacket(int acceleration);
+    static Packet noCommandPacket();
 
-    static Packet createPacket(volatile Command *command);
+    static bool isNoCommand(Packet &packet);
 
-    static Command *commandFromWire(int packet_size);
+    static Packet getPacketFromWire(int packet_size);
 
 
 private:
@@ -45,9 +53,10 @@ private:
     static int packetToInt(uint8_t byte1, uint8_t byte2);
     static float packetToFloat(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4);
 
-    static void writeToPacket(unsigned char value, Packet& packet, int position);
-    static void writeToPacket(int value, Packet& packet, int position);
-    static void writeToPacket(float value, Packet& packet, int position);
+    static void writeToPacket(unsigned char value, Packet &packet, int position);
+    static void writeToPacket(int value, Packet &packet, int position);
+    static void writeToPacket(float value, Packet &packet, int position);
+
 };
 
 #endif //FLOWER_I2CCOMMANDFACTORY_H

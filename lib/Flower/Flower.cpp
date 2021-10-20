@@ -115,7 +115,7 @@ void Flower::setupDriver() {
     //     Fast decay time is also terminated when the
     //     negative nominal current is reached. Fast decay is
     //     after on time.
-    driver.chm(SPREAD_CYCLE_ENABLED);
+    driver.chm(SPREAD_CYCLE_DISABLED);
 
     // 20bit max. Lower velocity threshold for switching on smart energy coolStep and stall guard
     // Needs to be enabled before activating DIAG1_PIN on motor stall
@@ -157,7 +157,6 @@ void Flower::setupDriver() {
     driver.diag1_pushpull(true);  // Active high
 
     attachInterrupt(digitalPinToInterrupt(diag1), Flower::onStall, RISING);
-
 }
 
 void Flower::setupStepper() {

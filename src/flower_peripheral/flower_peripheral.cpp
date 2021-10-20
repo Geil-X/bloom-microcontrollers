@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include <I2CPeripheral.h>
-#include <Debug.h>
 
 // I2C Communication
 #define DEVICE_ID 16  // I2C Address
+
+// Pin Definitions for different microcontrollers
+
+#if defined(UNO)
 
 // Stepper Pins
 #define DIAG1_PIN   3
@@ -17,8 +20,23 @@
 #define MISO    12  // SDO
 #define SCK     13  // SPI Reference Clock
 
+#elif defined(ATMEGA2560)
+
+// SPI Communication
+#define MISO  50  // SDO
+#define MOSI  51  // SDI
+#define SCK   52  // SPI Reference Clock
+#define CS    25
+
+// Stepper Pins
+#define STEP      2
+#define DIAG1_PIN 3
+#define DIR       4
+#define EN_PIN    5
+
+#endif
+
 Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN);
-Command *command;
 
 void setup() {
     I2CPeripheral::join(DEVICE_ID);
@@ -28,12 +46,6 @@ void setup() {
 }
 
 void loop() {
-    command = I2CPeripheral::tryGetCommand();
-
-    if (command != nullptr) {
-        command->execute(flower);
-        delete command;
-    }
-
+    I2CPeripheral::executeCommand(flower);
     flower.run();
 }

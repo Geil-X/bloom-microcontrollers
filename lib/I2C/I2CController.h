@@ -17,14 +17,14 @@ public:
      * @param device The peripheral device id to send the command to.
      * @param command The command being sent to the peripheral device.
      */
-    static void sendCommand(int device, Command *command);
+    static void sendPacket(int device, const Packet & packet);
 
     /**
      * Request the current command held by the device being queried.
      * @param device The device to request the command from.
      * @return The command currently held by the queried device.
      */
-    static Command *requestCommand(int device);
+    static Packet requestPacket(int device);
 };
 
 #endif //FLOWER_I2CCONTROLLER_H

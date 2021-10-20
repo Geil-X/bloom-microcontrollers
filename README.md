@@ -42,10 +42,33 @@ platform = atmelmegaavr
 board = uno_wifi_rev2
 ```
 
+### [Arduino Atmega 2560](https://docs.platformio.org/en/latest/boards/atmelavr/megaatmega2560.html)
+
+```pio
+[env:megaatmega2560]
+platform = atmelavr
+board = megaatmega2560
+```
+
 ### [Teensy 3.1 / 3.2](https://docs.platformio.org/en/latest/boards/teensy/teensy31.html)
 
 ```pio
 [env:teensy31]
 platform = teensy
 board = teensy31
+```
+
+### [Teensy 3.6](https://docs.platformio.org/en/latest/boards/teensy/teensy36.html)
+
+```pio
+platform = teensy
+board = teensy36
+```
+
+### [Node MCU](https://docs.platformio.org/en/latest/boards/espressif8266/nodemcuv2.html)
+
+```pio
+[env:nodemcuv2]
+platform = espressif8266
+board = nodemcuv2
 ```

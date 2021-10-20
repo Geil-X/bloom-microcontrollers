@@ -3,32 +3,23 @@
 #include <I2CCommandFactory.h>
 #include <Wire.h>
 
-volatile Command *I2CPeripheral::command = nullptr;
+Packet I2CPeripheral::packet = {};
 
 void I2CPeripheral::join(int device) {
     Wire.begin(device);
     Wire.onReceive(receiveCommand);
-    Wire.onRequest(requestCommand);
 }
 
 void I2CPeripheral::receiveCommand(int size) {
-    command = I2CCommandFactory::commandFromWire(size);
+    packet = I2CCommandFactory::getPacketFromWire(size);
 }
 
 /**
  * We need to clear the volatile command when returning a copy of that command.
  */
-Command *I2CPeripheral::tryGetCommand() {
-    if (command == nullptr) { return nullptr; }
+void I2CPeripheral::executeCommand(Flower &flower) {
+    if (I2CCommandFactory::isNoCommand(packet)) return;
 
-    Command *returnCommand = command->copy();
-    delete command;
-    command = nullptr;
-
-    return returnCommand;
-}
-
-void I2CPeripheral::requestCommand() {
-    Packet packet = I2CCommandFactory::createPacket(command);
-    Wire.write(packet.data, MAX_I2C_DATA_SIZE);
+    I2CCommandFactory::executePacket(packet, flower);
+    packet = I2CCommandFactory::noCommandPacket();
 }

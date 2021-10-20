@@ -2,81 +2,110 @@
 
 #include <Wire.h>
 
-Command *I2CCommandFactory::parsePacket(Packet packet) {
-    auto commandId = (Command::Id) packet.data[0];
-    switch (commandId) {
-        case Command::SETUP:
-            return new Setup();
-        case Command::HOME:
-            return new Home();
-        case Command::OPEN:
-            return new Open();
-        case Command::CLOSE:
-            return new Close();
-        case Command::OPEN_TO:
-            return new OpenTo(packetToFloat(
-                    packet.data[1], packet.data[2], packet.data[3], packet.data[4]));
-        case Command::SPEED:
-            return new Speed(packetToInt(packet.data[1], packet.data[2]));
-        case Command::ACCELERATION:
-            return new Acceleration(packetToInt(packet.data[1], packet.data[2]));
-        case Command::PING:
-            return new Ping();
-        case Command::NO_COMMAND:
-            return new NoCommand();
-        default:
-            return new InvalidCommand();
-    }
-}
-
-Packet I2CCommandFactory::createPacket(volatile Command *command) {
+Packet I2CCommandFactory::setupPacket() {
     Packet packet = {};
-    if (command == nullptr) {
-        packet.data[0] = Command::INVALID_COMMAND;
-        return packet;
-    }
-    auto commandId = (unsigned char) command->id;
-    switch (command->id) {
-        case Command::OPEN_TO: {
-            auto *openTo = (OpenTo *) command;
-            writeToPacket(commandId, packet, 0);
-            writeToPacket(openTo->percentage, packet, 1);
-            break;
-        }
-        case Command::SPEED: {
-            auto speed = (Speed *) command;
-            writeToPacket(commandId, packet, 0);
-            writeToPacket(speed->speed, packet, 1);
-            break;
-        }
-        case Command::ACCELERATION: {
-            auto acceleration = (Acceleration *) command;
-            writeToPacket(commandId, packet, 0);
-            writeToPacket(acceleration->acceleration, packet, 1);
-            break;
-        }
-        case Command::NO_COMMAND:
-        case Command::SETUP:
-        case Command::HOME:
-        case Command::OPEN:
-        case Command::CLOSE:
-        case Command::PING:
-        case Command::INVALID_COMMAND:
-            writeToPacket(commandId, packet, 0);
-            break;
-    }
-
+    writeToPacket((uint8_t) Command::SETUP, packet, 0);
     return packet;
 }
 
-Command *I2CCommandFactory::commandFromWire(int packet_size) {
-    Packet packets = {};
+Packet I2CCommandFactory::homePacket() {
+    Packet packet = {};
+    writeToPacket((uint8_t) Command::HOME, packet, 0);
+    return packet;
+}
+
+Packet I2CCommandFactory::openPacket() {
+    Packet packet = {};
+    writeToPacket(Command::OPEN, packet, 0);
+    return packet;
+}
+
+Packet I2CCommandFactory::closePacket() {
+    Packet packet = {};
+    writeToPacket(Command::CLOSE, packet, 0);
+    return packet;
+}
+
+Packet I2CCommandFactory::openToPacket(float percentage) {
+    Packet packet = {};
+    writeToPacket((uint8_t) Command::OPEN_TO, packet, 0);
+    writeToPacket(percentage, packet, 1);
+    return packet;
+}
+
+Packet I2CCommandFactory::speedPacket(int speed) {
+    Packet packet = {};
+    writeToPacket(Command::SPEED, packet, 0);
+    writeToPacket(speed, packet, 1);
+    return packet;
+}
+
+Packet I2CCommandFactory::accelerationPacket(int acceleration) {
+    Packet packet = {};
+    writeToPacket(Command::ACCELERATION, packet, 0);
+    writeToPacket(acceleration, packet, 1);
+    return packet;
+}
+
+Packet I2CCommandFactory::noCommandPacket() {
+    Packet packet = {};
+    writeToPacket(Command::NO_COMMAND, packet, 0);
+    return packet;
+}
+
+bool I2CCommandFactory::isNoCommand(Packet &packet) {
+    return packet.data[0] == Command::NO_COMMAND;
+}
+
+void I2CCommandFactory::executePacket(Packet packet, Flower &flower) {
+    auto commandId = (Command::Id) packet.data[0];
+    switch (commandId) {
+        case Command::SETUP: {
+            Command::setup(flower);
+            break;
+        }
+        case Command::HOME: {
+            Command::home(flower);
+            break;
+        }
+        case Command::OPEN: {
+            Command::open(flower);
+            break;
+        }
+        case Command::CLOSE: {
+            Command::close(flower);
+            break;
+        }
+        case Command::OPEN_TO: {
+            float percentage = packetToFloat(
+                    packet.data[1], packet.data[2],
+                    packet.data[3], packet.data[4]);
+            Command::openTo(flower, percentage);
+            break;
+        }
+        case Command::SPEED: {
+            int speed = packetToInt(packet.data[1], packet.data[2]);
+            Command::speed(flower, speed);
+            break;
+        }
+        case Command::ACCELERATION: {
+            int acceleration = packetToInt(packet.data[1], packet.data[2]);
+            Command::acceleration(flower, acceleration);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+Packet I2CCommandFactory::getPacketFromWire(int packet_size) {
+    Packet packet = {};
     int packet_index = 0;
     while (Wire.available() && packet_index < packet_size && packet_index < MAX_I2C_DATA_SIZE) {
-        packets.data[packet_index] = Wire.read();
+        packet.data[packet_index] = Wire.read();
         packet_index++;
     }
-    return parsePacket(packets);
+    return packet;
 }
 
 UInt16Packet I2CCommandFactory::toPacket(int value) {
@@ -112,7 +141,7 @@ float I2CCommandFactory::packetToFloat(uint8_t byte1, uint8_t byte2, uint8_t byt
     return intToFloat.f;
 }
 
-void I2CCommandFactory::writeToPacket(unsigned char value, Packet &packet, int position) {
+void I2CCommandFactory::writeToPacket(uint8_t value, Packet &packet, int position) {
     packet.data[position] = value;
 }
 
@@ -129,3 +158,4 @@ void I2CCommandFactory::writeToPacket(float value, Packet &packet, int position)
     packet.data[position + 2] = floatPacket.byte3;
     packet.data[position + 3] = floatPacket.byte4;
 }
+

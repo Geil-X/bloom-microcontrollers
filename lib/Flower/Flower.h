@@ -13,10 +13,7 @@
 #define MICROSTEPS 16
 
 // The number of consecutive stalls needed to consider the motor to have stalled
-#define CONSECUTIVE_STALLS 5
-
-// The windows of time in which stalled are considered back to back
-#define STALL_WINDOW 10 // ms
+#define CONSECUTIVE_STALLS 1
 
 enum Direction {
     DIRECTION_CLOCKWISE,

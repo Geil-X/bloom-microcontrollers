@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
-#include <Button.h>
-#include <PotentiometerButton.h>
+#include "../../lib/Sensors/Button.h"
+#include "../../lib/Sensors/PotentiometerButton.h"
 #include <Command.h>
 #include <I2CController.h>
 
