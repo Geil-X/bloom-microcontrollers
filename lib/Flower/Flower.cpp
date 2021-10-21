@@ -251,7 +251,7 @@ void Flower::close() {
 }
 
 void Flower::openTo(float percentage) {
-    constrain(percentage, 0, 100);
+    percentage = constrain(percentage, 0, 100);
 #if defined(OPEN_CLOCKWISE)
     int target = (int) (percentage * (max_steps / 100.));
 #elif defined(OPEN_COUNTERCLOCKWISE)
@@ -269,7 +269,7 @@ void Flower::closeAsync() {
 }
 
 void Flower::openToAsync(float percentage) {
-    constrain(percentage, 0, 100);
+    percentage = constrain(percentage, 0, 100);
     setDirection(DIRECTION_CLOCKWISE);
 #if defined(OPEN_CLOCKWISE)
     int target = (int) (percentage * (max_steps / 100.));

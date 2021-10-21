@@ -9,7 +9,8 @@
 #define MS_PER_SECOND 1000.
 
 // Device Parameters
-#define DEVICE_ID 16
+#define DEVICE_ID_1 16
+#define DEVICE_ID_2 17
 #define POLL_TIME 50 // ms
 
 // Choreography parameters
@@ -45,6 +46,7 @@ void loop() {
         lastCommand = millis();
         auto seconds = float((float) (millis() % sequence_time_ms) / 1000.);
         Packet positionPacket = I2CCommandFactory::openToPacket(sequencePosition(seconds));
-        I2CController::sendPacket(DEVICE_ID, positionPacket);
+        I2CController::sendPacket(DEVICE_ID_1, positionPacket);
+        I2CController::sendPacket(DEVICE_ID_2, positionPacket);
     }
 }

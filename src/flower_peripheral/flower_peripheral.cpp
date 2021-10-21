@@ -2,7 +2,7 @@
 #include <I2CPeripheral.h>
 
 // I2C Communication
-#define DEVICE_ID 16  // I2C Address
+#define DEVICE_ID 17  // I2C Address
 
 // Pin Definitions for different microcontrollers
 

@@ -1,70 +1,66 @@
 #include <Arduino.h>
 
-#include <Command.h>
+#include <I2CController.h>
 #include <MathExtra.h>
 #include <easing.h>
+#include <Choreography.h>
 //#include <sdnoise1234.h>
 
-// Constants
-#define MS_PER_SECOND 1000.
-
 // Device Parameters
-#define DEVICE_ID 16
-#define POLL_TIME 250 // ms
-
-// Stepper Pins
-#define DIAG1_PIN   3
-#define EN_PIN      7
-#define DIR     8
-#define STEP    9
-#define CS      10
-
-// SPI Communication
-#define MOSI    11  // SDI
-#define MISO    12  // SDO
-#define SCK     13  // SPI Reference Clock
-#define DEVICE_ID 16  // I2C Address
+#define DEVICE_ID_1 16
+#define DEVICE_ID_2 17
+#define POLL_TIME 500 // ms
 
 // Choreography parameters
 #define SEQUENCE_TIME 60. // s
-#define BLOOM_PERIOD 10. // s
-#define NOISE_PERIOD 1. // s
-#define SPEED MICROSTEPS * 1000 // micro steps / s
-#define ACCELERATION MICROSTEPS * 500 // micro steps / s
-#define FINISH_TIME 1. // s
 
-Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN);
-Command *command;
+// Running Variables
+#define SEQUENCE_COUNT 5
+Choreography<SEQUENCE_COUNT> choreography;
 unsigned long lastCommand = 0;
-const unsigned int sequence_time_ms = (SEQUENCE_TIME + FINISH_TIME) * MS_PER_SECOND;
 
-void setup() {
-    flower.setup();
-    flower.home();
 
-    flower.setMaxSpeed(SPEED);
-    flower.setAcceleration(ACCELERATION);
+float springBloom(float t) {
+    const uint8_t blooms = 6;
+    return t * incos(t, blooms - 0.5);
 }
 
-float sequencePosition(float seconds) {
-    if (seconds > SEQUENCE_TIME - BLOOM_PERIOD / 2) {
-        return 100.;
-    } else {
-//        auto pnoise = (float) ((1 + sdnoise1(seconds / NOISE_PERIOD, nullptr)) / 2);
-        float ramp = linearRamp(seconds, 0, SEQUENCE_TIME);
-        float bloom = ncos(seconds, BLOOM_PERIOD);
-        return easeOutQuad(ramp * bloom);
-    }
+float stayOpen(float t) {
+    return 1;
+}
+
+float stayClosed(float t) {
+    return 0;
+}
+
+float singleBloom(float t) {
+    return ncos(t);
+}
+
+float close(float t) {
+    return inverse(t);
+}
+
+void setup() {
+    I2CController::join();
+    choreography = Choreography<SEQUENCE_COUNT>()
+            .addSequence(30, springBloom)
+            .addSequence(3, stayOpen)
+            .addSequence(10, singleBloom)
+            .addSequence(20, close)
+            .addSequence(3, stayClosed);
+
+}
+
+void sendCommand() {
+    float position = map(choreography.perform(millis()), 0, 1, 0, 100);
+    Packet positionPacket = I2CCommandFactory::openToPacket(position);
+    Serial.println("Position: " + String(position));
+
+    I2CController::sendPacket(DEVICE_ID_1, positionPacket);
+    I2CController::sendPacket(DEVICE_ID_2, positionPacket);
 }
 
 void loop() {
-    if (millis() - lastCommand > POLL_TIME) {
-        auto seconds = float((float) (millis() % sequence_time_ms) / 1000.);
-        delete command;
-        float openToAmount = map(sequencePosition(seconds), 0., 1., 0., 100.);
-        command = new OpenTo(openToAmount);
-        command->execute(flower);
-    }
-
-    flower.run();
+    if (millis() - lastCommand > POLL_TIME) sendCommand();
 }
