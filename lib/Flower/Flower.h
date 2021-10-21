@@ -1,91 +1,209 @@
-/*
-  Flower.h - Library for controlling single flower code.
-  Created by Ramon Qu.
-*/
-#ifndef Flower_h
-#define Flower_h
+#ifndef FLOWER_FLOWER_H
+#define FLOWER_FLOWER_H
 
-#include "Arduino.h"
-#include "TeensyStep.h"
+#include <AccelStepper.h>
+#include <TMCStepper.h>
+
+
+// Toggle between the two modes of operation
+// If both are enabled, OPEN_CLOCKWISE wins
+//#define OPEN_CLOCKWISE
+#define OPEN_COUNTERCLOCKWISE
+
+#define MICROSTEPS 16
+
+// The number of consecutive stalls needed to consider the motor to have stalled
+#define CONSECUTIVE_STALLS 1
 
 enum Direction {
-    Open = 1,
-    Close = -1
+    DIRECTION_CLOCKWISE,
+    DIRECTION_COUNTERCLOCKWISE,
+#if defined(OPEN_CLOCKWISE)
+    // For clockwise open
+    DIRECTION_OPEN = DIRECTION_CLOCKWISE,
+    DIRECTION_CLOSE = DIRECTION_COUNTERCLOCKWISE
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    // For counterclockwise open
+    DIRECTION_CLOSE = DIRECTION_CLOCKWISE,
+    DIRECTION_OPEN = DIRECTION_COUNTERCLOCKWISE
+#endif
 };
 
 class Flower {
 public:
-    Flower();
+    Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
+           uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1);
 
-    Flower(int dir_pin, int step_pin, int sensorpin);
 
+    // Main Functions
+
+    /** Initialize the flower hardware. */
     void setup();
 
-    void step();
-
-    void step(int steps);
-
-    void reverse();
-
-    void setSpeed(int speed);
-
-    void setAcceleration(int acceleration);
-
-    void setRate(int speed, int acceleration);
-
+    /**
+     * Perform the homing sequence for the flower. This lets the flower know
+     * where it's boundaries of movement are.
+     *
+     * @note This function is blocking and resets the max-speed and acceleration
+     *       that were previously set. You will need to reset them after calling
+     *       this function.
+     */
     void home();
 
+    /**
+     * Find the boundary of the device for resetting the zero position.  This
+     * function is intended to be used after the initial home has already been
+     * performed but step was skipped or a stall was detected. This routine will
+     * reset the zero position and keep the old step range from the original home
+     * sequence.
+     *
+     * @note This function is blocking.
+     */
+//    void rehome();
+
+
+    // Accessors
+
+    /** Get the number of steps between the target position and the current position */
+    long remainingDistance();
+
+
+    // Modifier Functions
+
+    /**
+     * Set the max speed of the device.
+     * @param speed Maximum speed of the stepper motor is steps per second
+     */
+    void setMaxSpeed(float speed);
+
+    /** Set the acceleration of the device.
+     * @param acceleration Acceleration of the stepper motor is steps per second^2
+     */
+    void setAcceleration(float acceleration);
+
+    /**
+     * Be sure to set this value after the max speed and acceleration.
+     * This function won't work otherwise.
+     * @param speed Speed of the stepper motor is steps per second
+     *
+     * @seeitem runSpeed
+     */
+    void setSpeed(float speed);
+
+
+    // Actions
+
     void open();
-
-    int open(int percentage);
-
     void close();
+    void openTo(float percentage);
 
-    void setDir(Direction dir);
+    void openAsync();
+    void closeAsync();
+    void openToAsync(float percentage);
 
-    void setupThreshold(int stall_threshold, int boundary_offset, int stall_detection_move_block);
+    /**
+     * Run the motor to implement speed and acceleration in order to proceed to the target position
+     * You must call this at least once per step, preferably in your main loop
+     * If the motor is in the desired position, the cost is very small
+     * @returns true if the motor performed a step during this function call.
+     *
+     * @seeitem openAsync
+     * @seeitem closeAsync
+     * @seeitem openToAsync
+     * @seeitem runSpeed
+     */
+    bool run();
 
-    void recordStepSensorValue();
+    /**
+     * @returns true if the motor performed a step during this function call.
+     *
+     * @seeitem openAsync
+     * @seeitem closeAsync
+     * @seeitem openToAsync
+     * @seeitem run
+     */
+    bool runSpeed();
 
-    int moveUntilStall();
-    int moveUntilStall(Direction direction);
-
-    void stat();
-
-    bool operator==(Flower &other) const;
-
-    int _dir_pin;
-    int _step_pin;
-    Stepper stepper;
-    StepControl controller;
-    int total_step;
-    int _sensor_pin;
-    int current_step;
+    /**
+     * Check if the flower motor has stalled. This is a read and clear
+     * operation, so if the motor stalled, the stall value is set to
+     * false.
+     * */
+    bool motorStalled();
 
 private:
-    int _stall_threshold;
-    int _boundary_offset;
-    int _stall_detection_move_block;
-    int _enpin;
-    int _cspin;
-    int _mosipin;
-    int _misopin;
-    int _sckpin;
-    int _ms1pin;
-    int _ms2pin;
-    int _slppin;
-    Direction _dir;
-    int _driver;
+    // Setup Functions
 
-    uint32_t _lasttime;
+    /** Setup all the configuration for the AccelStepper @see driver */
+    void setupDriver();
+
+    /** Setup all the configuration for the TMC2130Stepper @see stepper */
+    void setupStepper();
 
 
-    bool _isrunning;
-    float _rate;
-    float _stepToSensorVal[2000];
-    float _lastSum;
-    float _count;
-    float _sum;
+    // Modifiers
+
+    /**
+     * Set
+     * @param direction The direction of rotation to set the motor.
+     */
+    void setDirection(Direction direction);
+
+    /**
+     * Sets the zero position for the device based off of the current position.
+     * This function should be called when the device is in the closed position.
+     */
+    void setZeroPosition();
+
+    // Actions
+
+    /**
+     * Move the motor in a particular direction until the motor stalls out.
+     *
+     * @param direction The direction to move the motor into
+     * @return The number of steps that the motor performed before stalling
+     */
+    int moveUntilStall(Direction direction);
+
+    /** Move the stepper a particular number of millimeters */
+    void moveTo(int target);
+    void moveToBlocking(int position);
+
+    /** Move the stepper */
+    void move(int steps, Direction direction);
+
+    void moveBlocking(int steps, Direction direction);
+
+    /** Reverse the motor direction */
+    void reverse();
+
+    /** Clear all motor actions */
+    void stop();
+
+
+    // Stall Detection
+
+    /** Interrupt service routine for telling the flower object that the motor stalled */
+    static void onStall();
+    static void clearStalls();
+
+    /** Variable that stores the stall state of the flower. */
+    volatile static int stall_count;
+
+    // Driver objects
+    TMC2130Stepper driver;
+    AccelStepper stepper;
+
+    // Pins
+    uint8_t enable;
+    uint8_t direction;
+    uint8_t step;
+    uint8_t chip_select;
+    uint8_t diag1;
+
+    // Motor positioning
+    int max_steps;
 };
 
-#endif
+
+#endif //FLOWER_FLOWER_H
