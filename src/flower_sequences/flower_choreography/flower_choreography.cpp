@@ -2,65 +2,55 @@
 
 #include <I2CController.h>
 #include <MathExtra.h>
-#include <easing.h>
 #include <Choreography.h>
-//#include <sdnoise1234.h>
+#include <noise/noise1234.h>
+#include <easing.h>
 
 // Device Parameters
 #define DEVICE_ID_1 16
 #define DEVICE_ID_2 17
-#define POLL_TIME 500 // ms
-
-// Choreography parameters
-#define SEQUENCE_TIME 60. // s
+#define POLL_TIME 5 // ms
 
 // Running Variables
-#define SEQUENCE_COUNT 5
+#define SEQUENCE_COUNT 1
 Choreography<SEQUENCE_COUNT> choreography;
-unsigned long lastCommand = 0;
+
+#define DEVICE_COUNT 2
+int devices[DEVICE_COUNT] = {16, 17};
+unsigned long last_command;
 
 
-float springBloom(float t) {
-    const uint8_t blooms = 6;
-    return t * incos(t, blooms - 0.5);
-}
+#define DURATION 600.f
 
-float stayOpen(float t) {
-    return 1;
-}
-
-float stayClosed(float t) {
-    return 0;
-}
-
-float singleBloom(float t) {
-    return ncos(t);
-}
-
-float close(float t) {
-    return inverse(t);
+float wander(int device, float t, float x, float y) {
+    float seconds_per_cycle = 5.f;
+    float cycles = DURATION / seconds_per_cycle;
+    float noise =  noise3(t * cycles, x, y);
+    float normalized_noise =  (1 + noise) / 2;
+    return easeInOutSine(normalized_noise);
 }
 
 void setup() {
     I2CController::join();
     choreography = Choreography<SEQUENCE_COUNT>()
-            .addSequence(30, springBloom)
-            .addSequence(3, stayOpen)
-            .addSequence(10, singleBloom)
-            .addSequence(20, close)
-            .addSequence(3, stayClosed);
-
+            .addSequence(DURATION, wander);
 }
 
 void sendCommand() {
-    float position = map(choreography.perform(millis()), 0, 1, 0, 100);
-    Packet positionPacket = I2CCommandFactory::openToPacket(position);
-    Serial.println("Position: " + String(position));
+    for (int device = 0; device < DEVICE_COUNT; device++) {
+        float position = choreography.perform(device, millis(), (float) device * 5.27f, (float) device * 6.87f);
+        float motorPosition = map(position, 0, 1, 0, 100);
+        Packet positionPacket = I2CCommandFactory::openToPacket(motorPosition);
 
-    I2CController::sendPacket(DEVICE_ID_1, positionPacket);
-    I2CController::sendPacket(DEVICE_ID_2, positionPacket);
+        int device_id = devices[device];
+        I2CController::sendPacket(device_id, positionPacket);
+    }
 }
 
 void loop() {
-    if (millis() - lastCommand > POLL_TIME) sendCommand();
+    unsigned long milliseconds = millis();
+    if (millis() - last_command > POLL_TIME) {
+        sendCommand();
+        last_command = milliseconds;
+    }
 }

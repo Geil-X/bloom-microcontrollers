@@ -6,8 +6,6 @@
 
 // Pin Definitions for different microcontrollers
 
-#if defined(UNO)
-
 // Stepper Pins
 #define DIAG1_PIN   3
 #define EN_PIN      7
@@ -20,22 +18,6 @@
 #define MISO    12  // SDO
 #define SCK     13  // SPI Reference Clock
 
-#elif defined(ATMEGA2560)
-
-// SPI Communication
-#define MISO  50  // SDO
-#define MOSI  51  // SDI
-#define SCK   52  // SPI Reference Clock
-#define CS    25
-
-// Stepper Pins
-#define STEP      2
-#define DIAG1_PIN 3
-#define DIR       4
-#define EN_PIN    5
-
-#endif
-
 Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN);
 
 void setup() {
@@ -43,9 +25,17 @@ void setup() {
 
     flower.setup();
     flower.home();
+    flower.setMaxSpeed(10000);
+    flower.setAcceleration(5000);
 }
 
 void loop() {
     I2CPeripheral::executeCommand(flower);
+
+    if (flower.motorStalled()) {
+        delay(500);
+        flower.home();
+    }
+
     flower.run();
 }

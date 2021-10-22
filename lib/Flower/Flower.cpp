@@ -2,6 +2,19 @@
 
 using namespace TMC2130_n;
 
+// Set stepper driver microsteps [1-255]
+#define MICROSTEPS 128
+
+// The stall guard threshold depends on the number of microsteps
+#if MICROSTEPS <= 16
+#define STALL_GUARD_THRESHOLD 30
+#else
+#define STALL_GUARD_THRESHOLD 10
+#endif
+
+// The number of consecutive stalls needed to consider the motor to have stalled
+#define CONSECUTIVE_STALLS 1
+
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
@@ -150,7 +163,7 @@ void Flower::setupDriver() {
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
     // A higher value makes stallGuard2 less sensitive and requires more torque to indicate a stall.
-    driver.sgt(50);
+    driver.sgt(STALL_GUARD_THRESHOLD);
 
     // Enable DIAG1_PIN active on motor stall (set TCOOLTHRS before using this feature)
     driver.diag1_stall(true);
@@ -177,9 +190,9 @@ void Flower::home() {
     int delay_ms = 200;
 
     // Set homing routine parameters
-    setMaxSpeed(MICROSTEPS * 2000);
-    setAcceleration(MICROSTEPS * 1000);
-    setSpeed(MICROSTEPS * 750);
+    setMaxSpeed(5000);
+    setAcceleration(2000);
+    setSpeed(1000);
 
     clearStalls();
 
@@ -212,15 +225,15 @@ long Flower::remainingDistance() {
 // ---- Modifier Functions ----
 
 void Flower::setMaxSpeed(float speed) {
-    stepper.setMaxSpeed(speed);
+    stepper.setMaxSpeed(MICROSTEPS * speed);
 }
 
 void Flower::setSpeed(float speed) {
-    stepper.setSpeed(speed);
+    stepper.setSpeed(MICROSTEPS * speed);
 }
 
 void Flower::setAcceleration(float acceleration) {
-    stepper.setAcceleration(acceleration);
+    stepper.setAcceleration(MICROSTEPS * acceleration);
 }
 
 void Flower::setDirection(Direction direction) {
@@ -342,6 +355,7 @@ bool Flower::motorStalled() {
         clearStalls();
         return true;
     }
+
     return false;
 }
 

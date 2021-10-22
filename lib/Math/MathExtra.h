@@ -10,6 +10,8 @@ float identity(float x);
 /** Invert a value within the range 0 -> 1 */
 float inverse(float x);
 
+float cos(float t, float cycles);
+
 /**
  * Normalized cosine function with adjustable period. The function is
  * normalized by remapping the typical output from -1 to 1 into the range of
@@ -34,8 +36,11 @@ float ncos(float t, float cycles = 1.);
  */
 float incos(float t, float cycles = 1.);
 
+float isin(float t, float cycles = 1);
+float sin(float t, float cycles = 1);
+
 /**
- * Normalized sine function with adjustable period. The function is
+ * Inverted and normalized sine function with adjustable period. The function is
  * normalized by remapping the typical output from -1 to 1 into the range of
  * 0 to 1. The function also has an adjustable period with which the sine
  * function oscillates.
@@ -44,7 +49,7 @@ float incos(float t, float cycles = 1.);
  * @param period The period the adjust the output with.
  * @return Normalized cosine function with results between 0 and 1 inclusive.
  */
-float nsin(float x, float period = 1.);
+float insin(float x, float cycles = 1.);
 
 /**
  * Linear ramping function. If the input value is less than the start value

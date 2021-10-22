@@ -6,13 +6,14 @@
 
 
 struct Sequence {
+public:
     Sequence() {
         this->run = zero;
         this->start_time = 0;
         this->duration = 0;
     }
 
-    Sequence(float startTime, float duration, float (*run)(float)) {
+    Sequence(float startTime, float duration, float (*run)(int, float, float, float)) {
         this->run = run;
         this->start_time = startTime;
         this->duration = duration;
@@ -20,15 +21,22 @@ struct Sequence {
 
     /**
      * Input range 0 -> 1 and output range 0 -> 1.
+     * @param device The device number
+     * @param t The time in seconds
+     * @param x The x-position of the device
+     * @param y The y-position of the device
      * @return
      */
-    float (*run)(float);
+    float (*run)(int, float, float, float);
 
     /** The time that this particular sequence starts running in seconds. */
     float start_time;
 
     /** The duration of the sequence in seconds. */
     float duration;
+
+private:
+    static float zero(int device, float t, float x, float y) { return 0; }
 };
 
 template<size_t MAX_SIZE>
@@ -53,7 +61,7 @@ public:
      *     The function should have a domain and range both from 0 -> 1 inclusive.
      * @param sequenceType The type of modification
      */
-    Choreography addSequence(float duration, float (*sequence)(float));
+    Choreography addSequence(float duration, float (*sequence)(int, float, float, float));
 
     /**
      * Perform the choreography and get the position of the choreography at
@@ -64,7 +72,7 @@ public:
      * @param milliseconds The current running time of the choreography or device.
      * @return The location of the sequence in the range 0 -> 1.
      */
-    float perform(unsigned long milliseconds);
+    float perform(int device, unsigned long milliseconds, float x, float y);
 
 private:
     unsigned int sequenceCount = 0;
@@ -73,7 +81,8 @@ private:
 };
 
 template<size_t MAX_SIZE>
-Choreography<MAX_SIZE> Choreography<MAX_SIZE>::addSequence(float sequenceDuration, float (*sequence)(float)) {
+Choreography<MAX_SIZE>
+Choreography<MAX_SIZE>::addSequence(float sequenceDuration, float (*sequence)(int, float, float, float)) {
     // Cannot add more sequences than specified
     if (sequenceCount >= MAX_SIZE) return (*this);
 
@@ -109,14 +118,16 @@ Choreography<MAX_SIZE> Choreography<MAX_SIZE>::addSequence(float sequenceDuratio
  *     +------------------+
  */
 template<size_t MAX_SIZE>
-float Choreography<MAX_SIZE>::perform(unsigned long milliseconds) {
+float Choreography<MAX_SIZE>::perform(int device, unsigned long milliseconds, float x, float y) {
     // Seconds is constrained to the max duration
     float seconds = (milliseconds % ((unsigned long) (duration * 1000))) / 1000.f;
+
     for (int sequenceIndex = sequenceCount - 1; sequenceIndex >= 0; sequenceIndex--) {
         Sequence sequence = sequences[sequenceIndex];
         if (seconds > sequence.start_time) {
             float sequenceTime = (seconds - sequence.start_time) / sequence.duration;
-            return sequences[sequenceIndex].run(sequenceTime);
+            float position = sequences[sequenceIndex].run(device, sequenceTime, x, y);
+            return constrain(position, 0, 1);
         }
     }
 
