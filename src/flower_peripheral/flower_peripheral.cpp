@@ -32,10 +32,10 @@ void setup() {
 void loop() {
     I2CPeripheral::executeCommand(flower);
 
-    if (flower.motorStalled()) {
-        delay(500);
-        flower.home();
-    }
+//    if (flower.motorStalled()) {
+//        delay(500);
+//        flower.home();
+//    }
 
     flower.run();
 }

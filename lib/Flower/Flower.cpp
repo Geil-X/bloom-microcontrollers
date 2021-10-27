@@ -3,7 +3,7 @@
 using namespace TMC2130_n;
 
 // Set stepper driver microsteps [1-255]
-#define MICROSTEPS 128
+#define MICROSTEPS 16
 
 // The stall guard threshold depends on the number of microsteps
 #if MICROSTEPS <= 16

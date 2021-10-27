@@ -10,49 +10,34 @@
 // Device Parameters
 #define COMMAND_DELAY 5 // ms
 
-// Running Variables
-#define TRIGGER_PIN 7
-#define ECHO_PIN 6
-DistanceSensor distanceSensor(TRIGGER_PIN, ECHO_PIN);
-
-#define SEQUENCE_COUNT 1
+#define SEQUENCE_COUNT 2
 Choreography<SEQUENCE_COUNT> choreography;
 
 #define DEVICE_COUNT 2
 int devices[DEVICE_COUNT] = {16, 17};
 unsigned long last_command;
 
-/** Return the relative distance to an object. Distance is between 0 and 1 where 0 is close and 1 is far away. */
-float relativeDistance() {
-#define MAX_DISTANCE 3
-#define MIN_DISTANCE 1
-    float distance = constrain(distanceSensor.distanceFt(), MIN_DISTANCE, MAX_DISTANCE);
-    return (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE);
+#define DURATION 3.f
+
+float open(int device, float t, float x, float y) {
+    return 1.;
 }
 
-#define DURATION 600.f
-
-float wander(int device, float t, float x, float y) {
-    float seconds_per_cycle = 5.f;
-    float cycles = DURATION / seconds_per_cycle;
-    float noise = noise3(t * cycles, x, y);
-    float normalized_noise = (1 + noise) / 2;
-    float easedNoise = easeInOutSine(normalized_noise);
-
-    // Close the flower when someone comes close
-    return lerp(relativeDistance(), 0.f, easedNoise);
+float close(int device, float t, float x, float y) {
+    return 0.;
 }
 
 void setup() {
     Serial.begin(9600);
     I2CController::join();
     choreography = Choreography<SEQUENCE_COUNT>()
-            .addSequence(DURATION, wander);
+            .addSequence(DURATION, open)
+            .addSequence(DURATION, close);
 }
 
 void sendCommand() {
     for (int device = 0; device < DEVICE_COUNT; device++) {
-        float position = choreography.perform(device, millis(), (float) device * 5.27f, (float) device * 6.87f);
+        float position = choreography.perform(device, millis(), 0., 0.);
         float motorPosition = map(position, 0, 1, 0, 100);
         Packet positionPacket = I2CCommandFactory::openToPacket(motorPosition);
 
