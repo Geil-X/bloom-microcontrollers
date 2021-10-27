@@ -1,6 +1,11 @@
 #include "DistanceSensor.h"
 #include <Arduino.h>
 
+// Constants for the speed of sound
+#define MICROSECONDS_PER_INCH 74.0524781f
+#define MICROSECONDS_PER_FOOT 888.629738f
+#define MICROSECONDS_PER_CM 29.154519f
+
 DistanceSensor::DistanceSensor(uint8_t triggerPin, uint8_t echoPin) {
     this->triggerPin = triggerPin;
     this->echoPin = echoPin;
@@ -9,17 +14,19 @@ DistanceSensor::DistanceSensor(uint8_t triggerPin, uint8_t echoPin) {
     pinMode(echoPin, INPUT);
 }
 
-float DistanceSensor::distanceCm() const {
-    float us = durationMicroSeconds();
-    return us / MICROSECONDS_PER_CM;
+float DistanceSensor::distanceCm() {
+    return durationMicroSeconds() / MICROSECONDS_PER_CM;
 }
 
-float DistanceSensor::distanceIn() const {
-    float us = durationMicroSeconds();
-    return us / MICROSECONDS_PER_INCH;
+float DistanceSensor::distanceIn() {
+    return durationMicroSeconds() / MICROSECONDS_PER_INCH;
 }
 
-float DistanceSensor::durationMicroSeconds() const {
+float DistanceSensor::distanceFt() {
+    return durationMicroSeconds() / MICROSECONDS_PER_FOOT;
+}
+
+float DistanceSensor::durationMicroSeconds() {
     // Ensure that the trigger pin is low
     digitalWrite(triggerPin, LOW);
     delayMicroseconds(2);
@@ -30,5 +37,9 @@ float DistanceSensor::durationMicroSeconds() const {
 
     // Cancel the pulse and wait for the reply
     digitalWrite(triggerPin, LOW);
-    return (float) pulseIn(echoPin, HIGH) / 2.f;
+    float duration = (float) pulseIn(echoPin, HIGH) / 2.f;
+
+    runningDuration.add(duration);
+    return runningDuration.getMedian();
 }
+

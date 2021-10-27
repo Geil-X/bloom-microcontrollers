@@ -2,16 +2,19 @@
 
 #include <I2CController.h>
 #include <MathExtra.h>
+#include <DistanceSensor.h>
 #include <Choreography.h>
 #include <noise/noise1234.h>
 #include <easing.h>
 
 // Device Parameters
-#define DEVICE_ID_1 16
-#define DEVICE_ID_2 17
-#define POLL_TIME 5 // ms
+#define COMMAND_DELAY 5 // ms
 
 // Running Variables
+#define TRIGGER_PIN 7
+#define ECHO_PIN 6
+DistanceSensor distanceSensor(TRIGGER_PIN, ECHO_PIN);
+
 #define SEQUENCE_COUNT 1
 Choreography<SEQUENCE_COUNT> choreography;
 
@@ -19,18 +22,29 @@ Choreography<SEQUENCE_COUNT> choreography;
 int devices[DEVICE_COUNT] = {16, 17};
 unsigned long last_command;
 
+/** Return the relative distance to an object. Distance is between 0 and 1 where 0 is close and 1 is far away. */
+float relativeDistance() {
+#define MAX_DISTANCE 3
+#define MIN_DISTANCE 1
+    float distance = constrain(distanceSensor.distanceFt(), MIN_DISTANCE, MAX_DISTANCE);
+    return (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE);
+}
 
 #define DURATION 600.f
 
 float wander(int device, float t, float x, float y) {
     float seconds_per_cycle = 5.f;
     float cycles = DURATION / seconds_per_cycle;
-    float noise =  noise3(t * cycles, x, y);
-    float normalized_noise =  (1 + noise) / 2;
-    return easeInOutSine(normalized_noise);
+    float noise = noise3(t * cycles, x, y);
+    float normalized_noise = (1 + noise) / 2;
+    float easedNoise = easeInOutSine(normalized_noise);
+
+    // Close the flower when someone comes close
+    return lerp(relativeDistance(), 0.f, easedNoise);
 }
 
 void setup() {
+    Serial.begin(9600);
     I2CController::join();
     choreography = Choreography<SEQUENCE_COUNT>()
             .addSequence(DURATION, wander);
@@ -49,7 +63,7 @@ void sendCommand() {
 
 void loop() {
     unsigned long milliseconds = millis();
-    if (millis() - last_command > POLL_TIME) {
+    if (millis() - last_command > COMMAND_DELAY) {
         sendCommand();
         last_command = milliseconds;
     }

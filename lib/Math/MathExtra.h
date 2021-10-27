@@ -7,8 +7,35 @@ float zero(float _);
 
 float identity(float x);
 
+/**
+ * Linearly interpolate between two values.
+ * @param t The interpolation value. Value is clamped in the range [0, 1]. 0 just the a value, and 1 is just the b value.
+ * @param a The initial value.
+ * @param b The final value.
+ * @return The interpolated value between a and b.
+ */
+float lerp(float t, float a, float b);
+
 /** Invert a value within the range 0 -> 1 */
 float inverse(float x);
+
+/**
+ * Linear ramping function. If the input value is less than the start value
+ * return 0. If the input value is greater than the stop value return 1.
+ * If the input value is between the start and stop value, the value is the
+ * linearly interpolated value between 0 and 1 for that interval.
+ *
+ * @note
+ *     0 ___/‾‾‾‾‾‾ 1
+ *
+ * @param x  Input value.
+ * @param start The value to start ramping up.
+ * @param stop The value to complete ramping.
+ * @return Ramped value from 0 to 1.
+ */
+float linearRamp(float x, float start, float stop);
+
+// Trigonometry
 
 float cos(float t, float cycles);
 
@@ -50,21 +77,5 @@ float sin(float t, float cycles = 1);
  * @return Normalized cosine function with results between 0 and 1 inclusive.
  */
 float insin(float x, float cycles = 1.);
-
-/**
- * Linear ramping function. If the input value is less than the start value
- * return 0. If the input value is greater than the stop value return 1.
- * If the input value is between the start and stop value, the value is the
- * linearly interpolated value between 0 and 1 for that interval.
- *
- * @note
- *     0 ___/‾‾‾‾‾‾ 1
- *
- * @param x  Input value.
- * @param start The value to start ramping up.
- * @param stop The value to complete ramping.
- * @return Ramped value from 0 to 1.
- */
-float linearRamp(float x, float start, float stop);
 
 #endif //FLOWER_MATHEXTRA_H

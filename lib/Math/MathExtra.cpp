@@ -10,7 +10,18 @@ float zero(float _) { return 0; }
 
 float identity(float x) { return x; }
 
+float lerp(float t, float a, float b) {
+    t = constrain(t, 0, 1);
+    return (1 - t) * a + t * b;
+}
+
+float linearRamp(float x, float start, float stop) {
+    return constrain((x - start) / (stop - start), 0, 1);
+}
+
 float inverse(float x) { return 1 - x; }
+
+// Trigonometry
 
 float cos(float t, float cycles) {
     return (float) cos((double) t * cycles);
@@ -34,8 +45,4 @@ float sin(float t, float cycles) {
 
 float insin(float x, float cycles) {
     return (float) ((1. - sin(TWO_PI * x * cycles)) / 2.);
-}
-
-float linearRamp(float x, float start, float stop) {
-    return constrain((x - start) / (stop - start), 0, 1);
 }

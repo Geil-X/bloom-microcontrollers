@@ -9,8 +9,10 @@ using namespace TMC2130_n;
 #if MICROSTEPS <= 16
 #define STALL_GUARD_THRESHOLD 30
 #else
-#define STALL_GUARD_THRESHOLD 10
+#define STALL_GUARD_THRESHOLD 20
 #endif
+
+#define STALL_WINDOW_MILLIS 50
 
 // The number of consecutive stalls needed to consider the motor to have stalled
 #define CONSECUTIVE_STALLS 1
@@ -40,6 +42,7 @@ Flower::Flower(
 }
 
 volatile int Flower::stall_count = 0;
+volatile unsigned long Flower::stall_time = 0;
 
 // ---- Main Functions ----
 
@@ -343,6 +346,13 @@ void Flower::stop() {
 // ---- Stall Detection ----
 
 void Flower::onStall() {
+    if (stall_count == 0) {
+        stall_time = millis();
+    } else if (millis() - stall_time > STALL_WINDOW_MILLIS) {
+        stall_time = millis();
+        stall_count = 0;
+    }
+
     stall_count++;
 }
 

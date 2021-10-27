@@ -185,6 +185,7 @@ private:
 
     /** Variable that stores the stall state of the flower. */
     volatile static int stall_count;
+    volatile static unsigned long stall_time;
 
     // Driver objects
     TMC2130Stepper driver;

@@ -2,10 +2,8 @@
 #define FLOWER_DISTANCESENSOR_H
 
 #include <Arduino.h>
+#include <RunningMedian.h>
 
-// Constants for the speed of sound
-#define MICROSECONDS_PER_INCH 74.0524781f
-#define MICROSECONDS_PER_CM 29.154519f
 
 class DistanceSensor {
 public:
@@ -15,13 +13,19 @@ public:
      * @return The distance to the closest object in centimeters. If no object
      *         is found then NAN is returned.
      */
-    float distanceCm() const;
+    float distanceCm();
 
     /**
      * @return The distance to the closest object in inches. If no object
      *         is found then NAN is returned.
      */
-    float distanceIn() const;
+    float distanceIn();
+
+    /**
+     * @return The distance to the closest object in inches. If no object
+     *         is found then NAN is returned.
+     */
+    float distanceFt();
 
 private:
     /**
@@ -29,9 +33,15 @@ private:
      * halved so that the duration is only the distance to the object and not
      * the duration to and from.
      *
+     * This duration is smoothed out by taking the median value of ever n'th
+     * sample. This will affect your outputs negatively if functions are not
+     * sampled fast enough.
+     *
      * @return The duration to the closest object in microseconds.
      */
-    float durationMicroSeconds() const;
+    float durationMicroSeconds();
+
+    RunningMedian runningDuration = RunningMedian(19);
 
     uint8_t triggerPin;
     uint8_t echoPin;
