@@ -7,25 +7,22 @@
 
 class DistanceSensor {
 public:
-    DistanceSensor(uint8_t triggerPin, uint8_t echoPin);
+    DistanceSensor(uint8_t trigger_pin, uint8_t echo_pin);
 
     /**
-     * @return The distance to the closest object in centimeters. If no object
-     *         is found then NAN is returned.
+     * @return The distance to the closest object in centimeters.
      */
-    float distanceCm();
+    float distanceCm(float max = 150);
 
     /**
-     * @return The distance to the closest object in inches. If no object
-     *         is found then NAN is returned.
+     * @return The distance to the closest object in inches.
      */
-    float distanceIn();
+    float distanceIn(float max = 13 * 12);
 
     /**
-     * @return The distance to the closest object in inches. If no object
-     *         is found then NAN is returned.
+     * @return The distance to the closest object in feet.
      */
-    float distanceFt();
+    float distanceFt(float max = 5);
 
 private:
     /**
@@ -37,14 +34,17 @@ private:
      * sample. This will affect your outputs negatively if functions are not
      * sampled fast enough.
      *
+     * @param timeout_microseconds The maximum time that the sensor will wait
+     *     for a response. After the timout period, the sensor will return
+     *     half the timeout duration (the max time it could have measured).
      * @return The duration to the closest object in microseconds.
      */
-    float durationMicroSeconds();
+    float durationMicroSeconds(unsigned long timeout_microseconds);
 
     RunningMedian runningDuration = RunningMedian(19);
 
-    uint8_t triggerPin;
-    uint8_t echoPin;
+    uint8_t trigger_pin;
+    uint8_t echo_pin;
 };
 
 

@@ -3,13 +3,13 @@
 
 #include <AccelStepper.h>
 #include <TMCStepper.h>
+#include <VoltageSensor.h>
 
 
 // Toggle between the two modes of operation
 // If both are enabled, OPEN_CLOCKWISE wins
 //#define OPEN_CLOCKWISE
 #define OPEN_COUNTERCLOCKWISE
-
 
 enum Direction {
     DIRECTION_CLOCKWISE,
@@ -28,7 +28,8 @@ enum Direction {
 class Flower {
 public:
     Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
-           uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1);
+           uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1,
+           uint8_t vm);
 
 
     // Main Functions
@@ -127,6 +128,19 @@ public:
      * */
     bool motorStalled();
 
+    /**
+     * Check if the motor has regained power. This is a read and clear
+     * operation.
+     *
+     * @note This function should be called fairly often so that it can monitor
+     *       for power outages and check for moments when power is regained.
+     *
+     * @return If the motor has regained power.
+     */
+    bool regainedPower();
+
+    bool hasPower();
+
 private:
     // Setup Functions
 
@@ -187,9 +201,15 @@ private:
     volatile static int stall_count;
     volatile static unsigned long stall_time;
 
+    /** Voltage Detection */
+    bool lost_power = false;
+
     // Driver objects
     TMC2130Stepper driver;
     AccelStepper stepper;
+
+    // Sensors
+    VoltageSensor motor_voltage;
 
     // Pins
     uint8_t enable;
@@ -199,7 +219,7 @@ private:
     uint8_t diag1;
 
     // Motor positioning
-    int max_steps;
+    int max_steps = 0;
 };
 
 

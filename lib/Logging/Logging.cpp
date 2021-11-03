@@ -1,8 +1,43 @@
 #include "Logging.h"
 
-void Log::log(const String &type, const String &message) {
-    if (Serial) Serial.println(type + ":" + message);
+#include <Arduino.h>
+
+Log::LogLevel Log::log_level = RESPONSE;
+
+void Log::connect(LogLevel level, int baud) {
+    log_level = level;
+    Serial.begin(baud);
 }
+
+void Log::log(LogLevel level, const String &message) {
+    if (!Serial || level > log_level) return;
+
+    String qualifier;
+    switch (level) {
+        case PRINT:
+            Serial.println(message);
+            return;
+        case DEBUG:
+            qualifier = "Debug";
+            break;
+        case INFO:
+            qualifier = "Info";
+            break;
+        case WARN:
+            qualifier = "Warn";
+            break;
+        case ERROR:
+            qualifier = "Error";
+            break;
+        case RESPONSE:
+            qualifier = "Response";
+            break;
+    }
+
+    Serial.println(qualifier + ": " + message);
+}
+
+void Log::print(const String &message) { log(Log::PRINT, message); }
 
 void Log::debug(const String &message) { log(Log::DEBUG, message); }
 

@@ -7,6 +7,16 @@
 #define E 2.71828182845f
 #define EASING_BOUNCE 1.70158
 
+float linearWindow(float t, float window_percentage) {
+    if (t <= window_percentage) {
+        return t / window_percentage;
+    } else if (t >= 1 - window_percentage) {
+        return 1 - ((t - 1 + window_percentage) / window_percentage);
+    } else {
+        return 1;
+    }
+}
+
 float easeInSine(float t) {
     return (float) sin(PI_OVER_TWO * t);
 }

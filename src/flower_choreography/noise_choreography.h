@@ -16,7 +16,7 @@
 // Running Variables
 #define TRIGGER_PIN 7
 #define ECHO_PIN 6
-DistanceSensor distanceSensor(TRIGGER_PIN, ECHO_PIN);
+DistanceSensor distance_sensor(TRIGGER_PIN, ECHO_PIN);
 
 #define SEQUENCE_COUNT 1
 Choreography<SEQUENCE_COUNT> choreography;
@@ -29,7 +29,7 @@ unsigned long last_command;
 float relativeDistance() {
 #define MAX_DISTANCE 3
 #define MIN_DISTANCE 1
-    float distance = constrain(distanceSensor.distanceFt(), MIN_DISTANCE, MAX_DISTANCE);
+    float distance = constrain(distance_sensor.distanceFt(), MIN_DISTANCE, MAX_DISTANCE);
     return (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE);
 }
 

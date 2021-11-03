@@ -13,7 +13,13 @@ public:
         this->duration = 0;
     }
 
-    Sequence(float startTime, float duration, float (*run)(int, float, float, float)) {
+    /**
+     *
+     * @param startTime
+     * @param duration
+     * @param run  function (float time, float duration, float x, float y) returns float position [0 -> 1]
+     */
+    Sequence(float startTime, float duration, float (*run)(float, int, float, float, float)) {
         this->run = run;
         this->start_time = startTime;
         this->duration = duration;
@@ -21,13 +27,14 @@ public:
 
     /**
      * Input range 0 -> 1 and output range 0 -> 1.
-     * @param device The device number
      * @param t The time in seconds
+     * @param iteration The current iteration of the sequence
+     * @param duration The duration of the sequence
      * @param x The x-position of the device
      * @param y The y-position of the device
      * @return
      */
-    float (*run)(int, float, float, float);
+    float (*run)(float, int, float, float, float);
 
     /** The time that this particular sequence starts running in seconds. */
     float start_time;
@@ -35,14 +42,15 @@ public:
     /** The duration of the sequence in seconds. */
     float duration;
 
+
 private:
-    static float zero(int device, float t, float x, float y) { return 0; }
+    static float zero(float t, int i, float d, float x, float y) { return 0; }
 };
 
 template<size_t MAX_SIZE>
 class Choreography {
 public:
-    Choreography() = default;
+    Choreography();
 
     /**
      * Add a sequence to the choreography. They are added in sequential order.
@@ -61,7 +69,7 @@ public:
      *     The function should have a domain and range both from 0 -> 1 inclusive.
      * @param sequenceType The type of modification
      */
-    Choreography addSequence(float duration, float (*sequence)(int, float, float, float));
+    Choreography addSequence(float duration, float (*sequence)(float, int, float, float, float));
 
     /**
      * Perform the choreography and get the position of the choreography at
@@ -72,17 +80,25 @@ public:
      * @param milliseconds The current running time of the choreography or device.
      * @return The location of the sequence in the range 0 -> 1.
      */
-    float perform(int device, unsigned long milliseconds, float x, float y);
+    float perform(unsigned long milliseconds, float x = 0, float y = 0);
 
 private:
+    int seed;
+    int iteration;
     unsigned int sequenceCount = 0;
     float duration = 0;
     Sequence sequences[MAX_SIZE] = {};
 };
 
 template<size_t MAX_SIZE>
+Choreography<MAX_SIZE>::Choreography()  {
+    iteration = -1;
+    seed = 0;
+}
+
+template<size_t MAX_SIZE>
 Choreography<MAX_SIZE>
-Choreography<MAX_SIZE>::addSequence(float sequenceDuration, float (*sequence)(int, float, float, float)) {
+Choreography<MAX_SIZE>::addSequence(float sequenceDuration, float (*sequence)(float, int, float, float, float)) {
     // Cannot add more sequences than specified
     if (sequenceCount >= MAX_SIZE) return (*this);
 
@@ -118,15 +134,21 @@ Choreography<MAX_SIZE>::addSequence(float sequenceDuration, float (*sequence)(in
  *     +------------------+
  */
 template<size_t MAX_SIZE>
-float Choreography<MAX_SIZE>::perform(int device, unsigned long milliseconds, float x, float y) {
+float Choreography<MAX_SIZE>::perform(unsigned long milliseconds, float x, float y) {
     // Seconds is constrained to the max duration
+    int current_iteration = milliseconds / (unsigned long) (duration * 1000);
     float seconds = (milliseconds % ((unsigned long) (duration * 1000))) / 1000.f;
+
+    if (iteration != current_iteration) {
+        seed = (int) random(0, 10000);
+        iteration = current_iteration;
+    }
 
     for (int sequenceIndex = sequenceCount - 1; sequenceIndex >= 0; sequenceIndex--) {
         Sequence sequence = sequences[sequenceIndex];
         if (seconds > sequence.start_time) {
             float sequenceTime = (seconds - sequence.start_time) / sequence.duration;
-            float position = sequences[sequenceIndex].run(device, sequenceTime, x, y);
+            float position = sequences[sequenceIndex].run(sequenceTime, seed, sequence.duration, x, y);
             return constrain(position, 0, 1);
         }
     }

@@ -13,6 +13,7 @@
 #ifndef FLOWER_MATH_EASING
 #define FLOWER_MATH_EASING
 
+float linearWindow(float t, float windowing_percentage);
 float easeInSine(float t);
 float easeOutSine(float t);
 float easeInOutSine(float t);

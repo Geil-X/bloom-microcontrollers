@@ -6,11 +6,7 @@ using namespace TMC2130_n;
 #define MICROSTEPS 16
 
 // The stall guard threshold depends on the number of microsteps
-#if MICROSTEPS <= 16
 #define STALL_GUARD_THRESHOLD 30
-#else
-#define STALL_GUARD_THRESHOLD 20
-#endif
 
 #define STALL_WINDOW_MILLIS 50
 
@@ -20,6 +16,11 @@ using namespace TMC2130_n;
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
+// Resistors in the voltage dividers for measuring the motor voltage
+#define VOLTAGE_RESISTOR_1 1000  // 1M Ohm
+#define VOLTAGE_RESISTOR_2 100   // 100k Ohm
+
+
 enum SPREAD_CYCLE {
     SPREAD_CYCLE_ENABLED = 0,
     SPREAD_CYCLE_DISABLED = 1
@@ -28,17 +29,18 @@ enum SPREAD_CYCLE {
 
 Flower::Flower(
         uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
-        uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1)
+        uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1,
+        uint8_t vm)
         : driver(cs, R_SENSE, mosi, miso, sck),
-          stepper(stepper.DRIVER, step, dir) {
+          stepper(stepper.DRIVER, step, dir),
+          motor_voltage(vm, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2) {
 
     // Pin initialization
     this->enable = en;
-    this->chip_select = cs;
-    this->diag1 = diag1;
     this->direction = dir;
     this->step = step;
-    this->max_steps = 0;
+    this->chip_select = cs;
+    this->diag1 = diag1;
 }
 
 volatile int Flower::stall_count = 0;
@@ -80,7 +82,7 @@ void Flower::setupDriver() {
     driver.tbl(1);
 
     // Set the max hardware current
-    driver.rms_current(300);  // mA
+    driver.rms_current(400);  // mA
 
     // Set driver microsteps, [1-255]
     driver.microsteps(MICROSTEPS);
@@ -124,9 +126,9 @@ void Flower::setupDriver() {
     driver.hysteresis_end(0);
 
     // Set the chopper mode
-    // - SPREAD_CYCLE_ENABLED, 0:
+    // - SPREAD_CYCLE_ENABLED = 0:
     //     Standard mode (spreadCycle)
-    // - SPREAD_CYCLE_DISABLED, 1:
+    // - SPREAD_CYCLE_DISABLED = 1:
     //     Constant off time with fast decay time.
     //     Fast decay time is also terminated when the
     //     negative nominal current is reached. Fast decay is
@@ -195,7 +197,7 @@ void Flower::home() {
     // Set homing routine parameters
     setMaxSpeed(5000);
     setAcceleration(2000);
-    setSpeed(1000);
+    setSpeed(1500);
 
     clearStalls();
 
@@ -208,9 +210,9 @@ void Flower::home() {
     max_steps = moveUntilStall(DIRECTION_CLOSE);
 
     // Apply a boundary buffer
-    int buffer_steps = (int) (max_steps * 0.05);
-    moveBlocking(buffer_steps, DIRECTION_OPEN);
-    max_steps -= buffer_steps * 3;
+    int buffer_steps = (int) (max_steps * 0.1);
+    moveBlocking(buffer_steps / 2, DIRECTION_OPEN);
+    max_steps -= buffer_steps * 2;
 
     // Set the zero position for the device
     setZeroPosition();
@@ -367,5 +369,23 @@ bool Flower::motorStalled() {
     }
 
     return false;
+}
+
+bool Flower::regainedPower() {
+    bool has_power = hasPower();
+    if (has_power && lost_power) {
+        lost_power = false;
+        return true;
+    }
+    if (!has_power && !lost_power) {
+        lost_power = true;
+        return false;
+    }
+    return false;
+}
+
+bool Flower::hasPower() {
+#define VOLTAGE_THRESHOLD 4.5 // volts
+    return motor_voltage.read() >= VOLTAGE_THRESHOLD;
 }
 
