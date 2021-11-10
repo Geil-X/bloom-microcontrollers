@@ -4,7 +4,7 @@
 #include <AccelStepper.h>
 #include <TMCStepper.h>
 #include <VoltageSensor.h>
-
+#include <StallDetectionTuning.h>
 
 // Toggle between the two modes of operation
 // If both are enabled, OPEN_CLOCKWISE wins
@@ -47,23 +47,13 @@ public:
      */
     void home();
 
-    /**
-     * Find the boundary of the device for resetting the zero position.  This
-     * function is intended to be used after the initial home has already been
-     * performed but step was skipped or a stall was detected. This routine will
-     * reset the zero position and keep the old step range from the original home
-     * sequence.
-     *
-     * @note This function is blocking.
-     */
-//    void rehome();
 
+    // Accessor Functions
 
-    // Accessors
-
-    /** Get the number of steps between the target position and the current position */
-    long remainingDistance();
-
+    int getStallGuardThreshold() const;
+    unsigned int getStallDetectionThreshold() const;
+    unsigned long getSpeed();
+    unsigned int getStallGuardResult() const;
 
     // Modifier Functions
 
@@ -79,6 +69,12 @@ public:
     void setAcceleration(float acceleration);
 
     /**
+     * Set
+     * @param direction The direction of rotation to set the motor.
+     */
+    void setDirection(Direction direction);
+
+    /**
      * Be sure to set this value after the max speed and acceleration.
      * This function won't work otherwise.
      * @param speed Speed of the stepper motor is steps per second
@@ -87,6 +83,8 @@ public:
      */
     void setSpeed(float speed);
 
+    void setStallGuardThreshold(int sgt);
+    void setStallDetectionThreshold(int threshold);
 
     // Actions
 
@@ -121,6 +119,8 @@ public:
      */
     bool runSpeed();
 
+    // Accessors
+
     /**
      * Check if the flower motor has stalled. This is a read and clear
      * operation, so if the motor stalled, the stall value is set to
@@ -141,6 +141,9 @@ public:
 
     bool hasPower();
 
+    /** Reverse the motor direction */
+    void reverse();
+
 private:
     // Setup Functions
 
@@ -152,12 +155,6 @@ private:
 
 
     // Modifiers
-
-    /**
-     * Set
-     * @param direction The direction of rotation to set the motor.
-     */
-    void setDirection(Direction direction);
 
     /**
      * Sets the zero position for the device based off of the current position.
@@ -184,22 +181,27 @@ private:
 
     void moveBlocking(int steps, Direction direction);
 
-    /** Reverse the motor direction */
-    void reverse();
-
     /** Clear all motor actions */
     void stop();
 
 
     // Stall Detection
 
-    /** Interrupt service routine for telling the flower object that the motor stalled */
-    static void onStall();
-    static void clearStalls();
+    /**
+     * Update the stall guard parameters based on the current running speed.
+     * The motor driver stall guard threshold and the maximum detection
+     * threshold need to be adjusted because they are speed dependent.
+     */
+    void updateStallParameters();
 
     /** Variable that stores the stall state of the flower. */
-    volatile static int stall_count;
-    volatile static unsigned long stall_time;
+    unsigned long stall_read_time = 0;
+    unsigned long last_stall = 0;
+
+    /** When the stall guard result drops below this value, a stall is detected. [1, 1022] */
+    unsigned int stall_detection_threshold = 800;
+    int stall_guard_threshold = 63;
+    unsigned int stall_guard_result = 1023;
 
     /** Voltage Detection */
     bool lost_power = false;

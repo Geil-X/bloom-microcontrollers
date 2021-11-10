@@ -82,7 +82,7 @@ void setup() {
     digitalWrite(EN_PIN, LOW);
 }
 
-void loop() {
+__attribute__((unused)) void loop() {
     if (stalled) {
         driver.shaft(!driver.shaft());
         stalled = false;

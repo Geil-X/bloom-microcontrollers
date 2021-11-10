@@ -10,22 +10,23 @@
 class Log {
 public:
     enum LogLevel {
-        PRINT,
         DEBUG,
         INFO,
         WARN,
         ERROR,
-        RESPONSE
+        RESPONSE,
+        PRINT,
+        NONE,
     };
 
-    static void connect(LogLevel level = RESPONSE, int buad = 9600);
+    static void connect(LogLevel level = INFO, uint32_t buad = 9600);
 
-    static void print(const String &message);
     static void debug(const String &message);
     static void info(const String &message);
     static void warn(const String &message);
     static void error(const String &message);
     static void response(const String &message);
+    static void print(const String &message);
 
 private:
     static LogLevel log_level;

@@ -64,7 +64,7 @@ void sendCommand() {
     }
 }
 
-void loop() {
+__attribute__((unused)) void loop() {
     unsigned long milliseconds = millis();
     if (millis() - last_command > COMMAND_DELAY) {
         sendCommand();

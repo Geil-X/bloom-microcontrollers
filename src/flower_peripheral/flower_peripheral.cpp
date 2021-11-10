@@ -22,9 +22,11 @@
 #define DIP_PIN_COUNT 2
 int dip_pins[DIP_PIN_COUNT] = {4, 5};
 
+#define REFRESH_RATE 500 // us
+unsigned long last_refresh = 0;
+
 Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, MOTOR_VOLTAGE);
 DipSwitch<DIP_PIN_COUNT> dip_switch = DipSwitch<DIP_PIN_COUNT>(dip_pins);
-unsigned long last_command = 0;
 
 void setupFlower() {
     Log::info("Running Setup Sequence");
@@ -45,19 +47,23 @@ void setup() {
     setupFlower();
 }
 
-void loop() {
-    I2CPeripheral::executeCommand(flower);
+__attribute__((unused)) void loop() {
+    unsigned long ms = millis();
+    if (ms  - last_refresh   > REFRESH_RATE) {
+        I2CPeripheral::executeCommand(flower);
 
-    if (flower.regainedPower()) {
-        Log::info("Motor regained power");
-        delay(500);
-        setupFlower();
-    }
+        if (flower.regainedPower()) {
+            Log::info("Motor regained power");
+            delay(500);
+            setupFlower();
+        }
 
 //    if (flower.motorStalled()) {
 //        delay(500);
 //        flower.home();
 //    }
+    }
+
 
     flower.run();
 }

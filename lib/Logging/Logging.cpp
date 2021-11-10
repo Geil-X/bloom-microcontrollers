@@ -4,13 +4,13 @@
 
 Log::LogLevel Log::log_level = RESPONSE;
 
-void Log::connect(LogLevel level, int baud) {
+void Log::connect(LogLevel level, uint32_t baud) {
     log_level = level;
     Serial.begin(baud);
 }
 
 void Log::log(LogLevel level, const String &message) {
-    if (!Serial || level > log_level) return;
+    if (level == NONE || !Serial || level < log_level) return;
 
     String qualifier;
     switch (level) {
@@ -32,6 +32,8 @@ void Log::log(LogLevel level, const String &message) {
         case RESPONSE:
             qualifier = "Response";
             break;
+        case NONE:
+            return;
     }
 
     Serial.println(qualifier + ": " + message);

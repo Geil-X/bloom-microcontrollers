@@ -16,7 +16,7 @@ void setup() {
     voltage_sensor = VoltageSensor(VOLTAGE_PIN, R1, R2);
 }
 
-void loop() {
+__attribute__((unused)) void loop() {
 
     for (int i = 0; i < 10000; i++) {
         voltage = voltage_sensor.read();

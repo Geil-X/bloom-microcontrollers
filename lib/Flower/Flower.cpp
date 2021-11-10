@@ -1,17 +1,13 @@
 #include "Flower.h"
+#include "Logging.h"
 
 using namespace TMC2130_n;
 
 // Set stepper driver microsteps [1-255]
 #define MICROSTEPS 16
 
-// The stall guard threshold depends on the number of microsteps
-#define STALL_GUARD_THRESHOLD 30
-
-#define STALL_WINDOW_MILLIS 50
-
-// The number of consecutive stalls needed to consider the motor to have stalled
-#define CONSECUTIVE_STALLS 1
+#define STALL_BUFFER 250 // ms
+#define STALL_CHECK_TIME 1 // ms
 
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
@@ -41,10 +37,8 @@ Flower::Flower(
     this->step = step;
     this->chip_select = cs;
     this->diag1 = diag1;
+    this->stall_read_time = millis();
 }
-
-volatile int Flower::stall_count = 0;
-volatile unsigned long Flower::stall_time = 0;
 
 // ---- Main Functions ----
 
@@ -82,7 +76,7 @@ void Flower::setupDriver() {
     driver.tbl(1);
 
     // Set the max hardware current
-    driver.rms_current(400);  // mA
+    driver.rms_current(300);  // mA
 
     // Set driver microsteps, [1-255]
     driver.microsteps(MICROSTEPS);
@@ -167,14 +161,8 @@ void Flower::setupDriver() {
     // measurement range for readout. A lower value gives a higher sensitivity. Zero is the
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
-    // A higher value makes stallGuard2 less sensitive and requires more torque to indicate a stall.
-    driver.sgt(STALL_GUARD_THRESHOLD);
-
-    // Enable DIAG1_PIN active on motor stall (set TCOOLTHRS before using this feature)
-    driver.diag1_stall(true);
-    driver.diag1_pushpull(true);  // Active high
-
-    attachInterrupt(digitalPinToInterrupt(diag1), Flower::onStall, RISING);
+    // A higher value makes stallGuard2
+    driver.sgt((int8_t) stall_guard_threshold);
 }
 
 void Flower::setupStepper() {
@@ -197,9 +185,7 @@ void Flower::home() {
     // Set homing routine parameters
     setMaxSpeed(5000);
     setAcceleration(2000);
-    setSpeed(1500);
-
-    clearStalls();
+    setSpeed(500);
 
     // Fully open the motor
     delay(delay_ms);
@@ -214,31 +200,47 @@ void Flower::home() {
     moveBlocking(buffer_steps / 2, DIRECTION_OPEN);
     max_steps -= buffer_steps * 2;
 
+    Log::debug("Homing total steps = " + String(max_steps));
+
     // Set the zero position for the device
     setZeroPosition();
     moveTo((int) stepper.currentPosition());
 }
 
-
 // ---- Accessor Functions ----
 
-long Flower::remainingDistance() {
-    return stepper.distanceToGo();
+int Flower::getStallGuardThreshold() const {
+    return stall_guard_threshold;
+}
+
+unsigned int Flower::getStallDetectionThreshold() const {
+    return stall_detection_threshold;
+}
+
+unsigned long Flower::getSpeed() {
+    return (unsigned long) stepper.speed();
+}
+
+unsigned int Flower::getStallGuardResult() const {
+    return stall_guard_result;
 }
 
 
 // ---- Modifier Functions ----
 
 void Flower::setMaxSpeed(float speed) {
-    stepper.setMaxSpeed(MICROSTEPS * speed);
+//    stepper.setMaxSpeed(MICROSTEPS * speed);
+    stepper.setMaxSpeed(speed);
 }
 
 void Flower::setSpeed(float speed) {
-    stepper.setSpeed(MICROSTEPS * speed);
+//    stepper.setSpeed(MICROSTEPS * speed);
+    stepper.setSpeed(speed);
 }
 
 void Flower::setAcceleration(float acceleration) {
-    stepper.setAcceleration(MICROSTEPS * acceleration);
+//    stepper.setAcceleration(MICROSTEPS * acceleration);
+    stepper.setAcceleration(acceleration);
 }
 
 void Flower::setDirection(Direction direction) {
@@ -250,6 +252,15 @@ void Flower::setDirection(Direction direction) {
             driver.shaft(true);
             break;
     }
+}
+
+void Flower::setStallGuardThreshold(int sgt) {
+    stall_guard_threshold = sgt;
+    driver.sgt((int8_t) sgt);
+}
+
+void Flower::setStallDetectionThreshold(int threshold) {
+    stall_detection_threshold = threshold;
 }
 
 void Flower::setZeroPosition() {
@@ -299,11 +310,13 @@ void Flower::openToAsync(float percentage) {
 }
 
 bool Flower::run() {
-    return stepper.run();
+    bool stepped = stepper.run();
+    return stepped;
 }
 
 bool Flower::runSpeed() {
-    return stepper.runSpeed();
+    bool stepped = stepper.runSpeed();
+    return stepped;
 }
 
 void Flower::move(int steps, Direction direction) {
@@ -328,13 +341,14 @@ int Flower::moveUntilStall(Direction direction) {
     int steps = 0;
     setDirection(direction);
 
+    last_stall = millis();
     while (!motorStalled()) {
         if (runSpeed()) {
             steps++;
         }
     }
 
-    return steps - CONSECUTIVE_STALLS;
+    return steps;
 }
 
 void Flower::reverse() {
@@ -345,39 +359,71 @@ void Flower::stop() {
     stepper.stop();
 }
 
+void Flower::updateStallParameters() {
+    auto current_speed = (int) stepper.speed();
+    if (current_speed < STALL_TABLE[0][SPEED_COLUMN]) {
+        stall_guard_threshold = STALL_TABLE[0][SGT_COLUMN];
+        driver.sgt((int8_t) stall_guard_threshold);
+        stall_detection_threshold = STALL_TABLE[0][STALL_DETECTION_COLUMN];
+        return;
+    }
+
+    for (int i = 1; i < NUM_STALL_VALUES; i++) {
+        int table_speed = STALL_TABLE[i][SPEED_COLUMN];
+
+        if (table_speed > current_speed) {
+            int lower_speed = STALL_TABLE[i - 1][SPEED_COLUMN];
+            int upper_speed = STALL_TABLE[i][SPEED_COLUMN];
+            int lower_sgt = STALL_TABLE[i - 1][SGT_COLUMN];
+            int upper_sgt = STALL_TABLE[i][SGT_COLUMN];
+            int lower_detection_threshold = STALL_TABLE[i - 1][STALL_DETECTION_COLUMN];
+            int upper_detection_threshold = STALL_TABLE[i][STALL_DETECTION_COLUMN];
+
+            stall_guard_threshold = (int) map(
+                    current_speed,
+                    lower_speed, upper_speed,
+                    lower_sgt, upper_sgt);
+            driver.sgt((int8_t) stall_guard_threshold);
+
+            stall_detection_threshold = map(
+                    current_speed,
+                    lower_speed, upper_speed,
+                    lower_detection_threshold, upper_detection_threshold);
+
+            return;
+        }
+    }
+}
+
 // ---- Stall Detection ----
 
-void Flower::onStall() {
-    if (stall_count == 0) {
-        stall_time = millis();
-    } else if (millis() - stall_time > STALL_WINDOW_MILLIS) {
-        stall_time = millis();
-        stall_count = 0;
-    }
-
-    stall_count++;
-}
-
-void Flower::clearStalls() {
-    stall_count = 0;
-}
-
 bool Flower::motorStalled() {
-    if (stall_count >= CONSECUTIVE_STALLS) {
-        clearStalls();
-        return true;
+#define MINIMUM_STALL_SPEED 500
+    if (stepper.speed() < MINIMUM_STALL_SPEED) {
+        return false;
     }
 
+    unsigned long ms = millis();
+    if (ms - stall_read_time > STALL_CHECK_TIME) {
+        stall_guard_result = driver.sg_result();
+        if (ms - last_stall > STALL_BUFFER && stall_guard_result < stall_detection_threshold) {
+            last_stall = ms;
+            return true;
+        }
+        stall_read_time = ms;
+    }
     return false;
 }
 
 bool Flower::regainedPower() {
     bool has_power = hasPower();
     if (has_power && lost_power) {
+        Log::debug("Regained motor power");
         lost_power = false;
         return true;
     }
     if (!has_power && !lost_power) {
+        Log::debug("Regained motor power");
         lost_power = true;
         return false;
     }

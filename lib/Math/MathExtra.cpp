@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <math.h>
-#include <MathExtra.h>
+#include "MathExtra.h"
 
 float map(float amt, float from_low, float from_high, float to_low, float to_high) {
     return to_low + (amt - from_low) * (to_high - to_low) / (from_high - from_low);

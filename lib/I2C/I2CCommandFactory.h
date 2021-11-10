@@ -46,9 +46,9 @@ public:
     static Packet getPacketFromWire(int packet_size);
 
 
-private:
     static UInt16Packet toPacket(int value);
     static UInt32Packet toPacket(float value);
+private:
 
     static int packetToInt(uint8_t byte1, uint8_t byte2);
     static float packetToFloat(uint8_t byte1, uint8_t byte2, uint8_t byte3, uint8_t byte4);

@@ -59,16 +59,16 @@ float close(float t, int seed, float duration, float x, float y) {
 }
 
 void setupFlower() {
-    Log::connect();
-    Log::info("Running Setup Sequence");
+    Log::info("Running setup sequence");
     flower.setup();
     flower.home();
     flower.setMaxSpeed(10000);
     flower.setAcceleration(5000);
+    Log::info("Running main loop");
 }
 
 void setup() {
-    Log::connect(Log::INFO);
+    Log::connect(Log::DEBUG, 115200);
     Log::info("Running shy standalone flower");
 
     while (!flower.hasPower()) {}
@@ -98,7 +98,7 @@ void updatePosition(unsigned long ms) {
     Command::openTo(flower, mapped_position);
 }
 
-void loop() {
+__attribute__((unused)) void loop() {
     unsigned long ms = millis();
     if (ms - last_command > NEW_COMMAND_TIME) {
         updatePosition(ms);
