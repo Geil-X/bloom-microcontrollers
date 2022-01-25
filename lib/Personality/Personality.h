@@ -48,16 +48,16 @@ public:
 
     void controlMotor(uint16_t millis, Flower &flower) override {
         if (flower.isAtTarget()) {
-            flower.openToAsync(randomFloat(0.f, 100.f));
+            flower.openToAsync(random16());
         }
     }
 
     void controlLights(uint16_t millis, Flower &flower, CRGB leds[], uint8_t numLeds) override {
-//        Angle globalOffset = inoise8(millis / 10, (uint16_t) flower.getPosition() / 5) * 3;
-        Angle globalOffset = inoise8((uint16_t) (flower.getPosition() * UINT16_MAX) / 250) * 5;
+//        angle8 globalOffset = inoise8(millis / 10, (uint16_t) flower.getPosition() / 5) * 3;
+        angle8 globalOffset = inoise8(flower.getPosition() / 250) * 5;
 
         for (int i = 0; i < numLeds; i++) {
-            Angle ledAngle = qmul8(UINT8_MAX / numLeds, i);
+            angle8 ledAngle = qmul8(UINT8_MAX / numLeds, i);
             leds[i] = colorAt(ledAngle + globalOffset, circularGradient, NUM_GRADIENT_COLORS);
         }
     }
@@ -88,7 +88,7 @@ public:
 
     void controlMotor(uint16_t millis, Flower &flower) override {
         if (flower.isClosed()) {
-            flower.openToAsync(25.f);
+            flower.openToAsync(UINT16_MAX / 4);
         }
         if (flower.isAtTarget()) {
             flower.closeAsync();
@@ -96,7 +96,7 @@ public:
     }
 
     void controlLights(uint16_t millis, Flower &flower, CRGB leds[], uint8_t numLeds) override {
-        auto lerp = (uint8_t) (flower.getPosition() * UINT8_MAX) * 4;
+        fract8 lerp = constrain((flower.getPosition() / UINT8_MAX), 0, UINT8_MAX / 4) * 4;
         for (int i = 0; i < numLeds; i++) {
             leds[i] = blend(closedColor, openColor, lerp);
         }
@@ -123,7 +123,7 @@ public:
 
     void controlMotor(uint16_t millis, Flower &flower) override {
         if (flower.isClosed()) {
-            flower.openToAsync(randomFloat(0.f, 50.f));
+            flower.openToAsync(random16() / 2);
         }
         if (flower.isAtTarget()) {
             flower.closeAsync();
@@ -155,23 +155,23 @@ public:
 
     void controlMotor(uint16_t millis, Flower &flower) override {
         if (flower.isAtTarget()) {
-            flower.openToAsync(randomFloat(0.f, 100.f));
+            flower.openToAsync(random16());
         }
     }
 
     void controlLights(uint16_t millis, Flower &flower, CRGB leds[], uint8_t numLeds) override {
-        Angle globalOffset = inoise8(millis / 5) * 5;
-        Angle colorLerps[NUM_GRADIENT_COLORS] = {
+        angle8 globalOffset = inoise8(millis / 5) * 5;
+        angle8 colorLerps[NUM_GRADIENT_COLORS] = {
                 inoise8(millis / 2, 500),
                 inoise8(millis / 2, 1000),
                 inoise8(millis / 2, 1500)};
 
         for (int i = 0; i < NUM_GRADIENT_COLORS; i++) {
-            circularGradient[i]->color = blend(gradient1[i], gradient2[i], colorLerps[i].theta);
+            circularGradient[i]->color = blend(gradient1[i], gradient2[i], colorLerps[i]);
         }
 
         for (int i = 0; i < numLeds; i++) {
-            Angle ledAngle = qmul8(UINT8_MAX / numLeds, i);
+            angle8 ledAngle = qmul8(UINT8_MAX / numLeds, i);
             leds[i] = colorAt(ledAngle + globalOffset, circularGradient, NUM_GRADIENT_COLORS);
         }
     }

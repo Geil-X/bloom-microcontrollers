@@ -117,7 +117,7 @@ __attribute__((unused)) void loop() {
     }
 
     if (seconds - emotionStartTime > emotionDuration) {
-//        getNextEmotion();
+        getNextEmotion();
         emotionStartTime = seconds;
     }
 

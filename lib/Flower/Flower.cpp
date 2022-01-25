@@ -1,4 +1,7 @@
 #include "Flower.h"
+
+#include <FastLED.h>
+#include <MathExtra.h>
 #include "Logging.h"
 
 using namespace TMC2130_n;
@@ -14,7 +17,7 @@ using namespace TMC2130_n;
 
 
 enum SPREAD_CYCLE {
-    SPREAD_CYCLE_ENABLED = 0,
+    SPREAD_CYCLE_ENABLED [[maybe_unused]] = 0,
     SPREAD_CYCLE_DISABLED = 1
 };
 
@@ -153,7 +156,7 @@ void Flower::setupDriver() {
     // starting value working with most motors.
     // Stall guard threshold range -64 to +63:
     // A higher value makes stallGuard2
-    driver.sgt((int8_t) stall_guard_threshold);
+    driver.sgt(30);
 }
 
 void Flower::setupStepper() {
@@ -190,7 +193,7 @@ void Flower::home() {
 
     // Apply a boundary buffer
     int buffer_steps = (int) (max_steps * 0.1);
-    moveBlocking(buffer_steps / 2, DIRECTION_OPEN);
+    moveBlocking(buffer_steps / 2);
     max_steps -= buffer_steps * 2;
 
     Log::debug("Homing total steps = " + String(max_steps));
@@ -202,27 +205,27 @@ void Flower::home() {
 
 // ---- Accessor Functions ----
 
-float Flower::getPosition() {
+fract16 Flower::getPosition() {
 #if defined(OPEN_CLOCKWISE)
-    return (float) stepper.currentPosition() / max_steps;
+    return map(stepper.currentPosition(), 0, max_steps, 0, UINT;
 #elif defined(OPEN_COUNTERCLOCKWISE)
-    return (float) (max_steps - stepper.currentPosition()) / max_steps;
+    return map(max_steps - stepper.currentPosition(), 0, max_steps, 0, UINT16_MAX);
 #endif
 }
 
-int Flower::getStallGuardThreshold() const {
-    return stall_guard_threshold;
+int8_t Flower::getStallGuardThreshold() {
+    return driver.sgt();
 }
 
-unsigned int Flower::getStallDetectionThreshold() const {
+uint16_t Flower::getStallDetectionThreshold() const {
     return stall_detection_threshold;
 }
 
-unsigned long Flower::getSpeed() {
-    return (unsigned long) stepper.speed();
+[[maybe_unused]] uint16_t Flower::getSpeed() {
+    return (uint16_t) stepper.speed();
 }
 
-unsigned int Flower::getStallGuardResult() const {
+uint16_t Flower::getStallGuardResult() const {
     return stall_guard_result;
 }
 
@@ -248,23 +251,20 @@ bool Flower::isAtTarget() {
 
 // ---- Modifier Functions ----
 
-void Flower::setMaxSpeed(float speed) {
-//    stepper.setMaxSpeed(MICROSTEPS * speed);
+void Flower::setMaxSpeed(uint16_t speed) {
     stepper.setMaxSpeed(speed);
 }
 
-void Flower::setSpeed(float speed) {
-//    stepper.setSpeed(MICROSTEPS * speed);
+void Flower::setSpeed(uint16_t speed) {
     stepper.setSpeed(speed);
 }
 
-void Flower::setAcceleration(float acceleration) {
-//    stepper.setAcceleration(MICROSTEPS * acceleration);
+void Flower::setAcceleration(uint16_t acceleration) {
     stepper.setAcceleration(acceleration);
 }
 
-void Flower::setDirection(Direction direction) {
-    switch (direction) {
+void Flower::setDirection(Direction dir) {
+    switch (dir) {
         case DIRECTION_CLOCKWISE:
             driver.shaft(false);
             break;
@@ -274,12 +274,11 @@ void Flower::setDirection(Direction direction) {
     }
 }
 
-void Flower::setStallGuardThreshold(int sgt) {
-    stall_guard_threshold = sgt;
-    driver.sgt((int8_t) sgt);
+void Flower::setStallGuardThreshold(int8_t sgt) {
+    driver.sgt(sgt);
 }
 
-void Flower::setStallDetectionThreshold(int threshold) {
+void Flower::setStallDetectionThreshold(uint16_t threshold) {
     stall_detection_threshold = threshold;
 }
 
@@ -292,40 +291,39 @@ void Flower::setZeroPosition() {
 }
 
 void Flower::open() {
-    openTo(100);
+    openTo(UINT16_MAX);
 }
 
 void Flower::close() {
     openTo(0);
 }
 
-void Flower::openTo(float percentage) {
-    percentage = constrain(percentage, 0, 100);
+void Flower::openTo(fract16 percentage) {
+    uint16_t target;
 #if defined(OPEN_CLOCKWISE)
-    int target = (int) (percentage * (max_steps / 100.));
+    target = map16(percentage, 0, max_steps)
 #elif defined(OPEN_COUNTERCLOCKWISE)
-    int target = max_steps - (int) (percentage * (max_steps / 100.));
+    target = max_steps - map16(percentage, 0, max_steps);
 #endif
     moveToBlocking(target);
 }
 
 void Flower::openAsync() {
-    openToAsync(100);
+    openToAsync(UINT16_MAX);
 }
 
 void Flower::closeAsync() {
     openToAsync(0);
 }
 
-void Flower::openToAsync(float percentage) {
-    percentage = constrain(percentage, 0, 100);
+void Flower::openToAsync(fract16 percentage) {
+    uint16_t target;
     setDirection(DIRECTION_CLOCKWISE);
 #if defined(OPEN_CLOCKWISE)
-    int target = (int) (percentage * (max_steps / 100.));
+    target = map16(percentage, 0, max_steps)
 #elif defined(OPEN_COUNTERCLOCKWISE)
-    int target = max_steps - (int) (percentage * (max_steps / 100.));
+    target = max_steps - map16(percentage, 0, max_steps);
 #endif
-
     moveTo(target);
 }
 
@@ -339,27 +337,26 @@ bool Flower::runSpeed() {
     return stepper.runSpeed();
 }
 
-void Flower::move(int steps, Direction direction) {
-    setDirection(direction);
+void Flower::move(uint16_t steps) {
     stepper.move(steps);
 }
 
-void Flower::moveBlocking(int steps, Direction direction) {
-    move(steps, direction);
+void Flower::moveBlocking(uint16_t steps) {
+    move(steps);
     stepper.runToPosition();
 }
 
-void Flower::moveTo(int target) {
+void Flower::moveTo(uint16_t target) {
     stepper.moveTo(target);
 }
 
-void Flower::moveToBlocking(int position) {
+void Flower::moveToBlocking(uint16_t position) {
     stepper.runToNewPosition(position);
 }
 
-int Flower::moveUntilStall(Direction direction) {
+uint16_t Flower::moveUntilStall(Direction dir) {
     int steps = 0;
-    setDirection(direction);
+    setDirection(dir);
 
     last_stall = millis();
     while (!motorStalled()) {
@@ -375,7 +372,7 @@ void Flower::reverse() {
     driver.shaft(!driver.shaft());
 }
 
-void Flower::stop() {
+[[maybe_unused]] void Flower::stop() {
     stepper.stop();
 }
 
@@ -383,8 +380,7 @@ void Flower::updateStallParameters() {
     float current_speed = stepper.speed();
 
     if (current_speed < (float) STALL_TABLE[0][SPEED_COLUMN]) {
-        stall_guard_threshold = STALL_TABLE[0][SGT_COLUMN];
-        driver.sgt((int8_t) stall_guard_threshold);
+        driver.sgt((int8_t) STALL_TABLE[0][SGT_COLUMN]);
         stall_detection_threshold = STALL_TABLE[0][STALL_DETECTION_COLUMN];
         return;
     }
@@ -400,11 +396,11 @@ void Flower::updateStallParameters() {
             int lower_detection_threshold = STALL_TABLE[i - 1][STALL_DETECTION_COLUMN];
             int upper_detection_threshold = STALL_TABLE[i][STALL_DETECTION_COLUMN];
 
-            stall_guard_threshold = (int) map(
+            auto stall_guard_threshold = (int8_t) map(
                     (int) current_speed,
                     lower_speed, upper_speed,
                     lower_sgt, upper_sgt);
-            driver.sgt((int8_t) stall_guard_threshold);
+            driver.sgt(stall_guard_threshold);
 
             stall_detection_threshold = map(
                     (int) current_speed,

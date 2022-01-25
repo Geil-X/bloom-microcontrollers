@@ -5,6 +5,7 @@
 #include <TMCStepper.h>
 #include <VoltageSensor.h>
 #include <StallDetectionTuning.h>
+#include <FastLED.h>
 
 // Toggle between the two modes of operation
 // If both are enabled, OPEN_CLOCKWISE wins
@@ -50,16 +51,16 @@ public:
     // Accessor Functions
 
     /**
-     * @return The position of the flower from 0 (closed) to 1 (open)
+     * @return The fractional position of the flower between 0 and 1
      */
-    float getPosition();
-    int getStallGuardThreshold() const;
-    unsigned int getStallDetectionThreshold() const;
-    unsigned long getSpeed();
-    unsigned int getStallGuardResult() const;
-    bool isOpen();
-    bool isClosed();
-    bool isAtTarget();
+    [[nodiscard]] fract16 getPosition();
+    [[nodiscard]] int8_t getStallGuardThreshold();
+    [[nodiscard]] uint16_t getStallDetectionThreshold() const;
+    [[maybe_unused]] [[nodiscard]] uint16_t getSpeed();
+    [[nodiscard]] uint16_t getStallGuardResult() const;
+    [[nodiscard]] bool isOpen();
+    [[nodiscard]] bool isClosed();
+    [[nodiscard]] bool isAtTarget();
 
     // Modifier Functions
 
@@ -67,18 +68,18 @@ public:
      * Set the max speed of the device.
      * @param speed Maximum speed of the stepper motor is steps per second
      */
-    void setMaxSpeed(float speed);
+    void setMaxSpeed(uint16_t speed);
 
     /** Set the acceleration of the device.
      * @param acceleration Acceleration of the stepper motor is steps per second^2
      */
-    void setAcceleration(float acceleration);
+    void setAcceleration(uint16_t acceleration);
 
     /**
      * Set
-     * @param direction The direction of rotation to set the motor.
+     * @param dir The direction of rotation to set the motor.
      */
-    void setDirection(Direction direction);
+    void setDirection(Direction dir);
 
     /**
      * Be sure to set this value after the max speed and acceleration.
@@ -87,20 +88,20 @@ public:
      *
      * @seeitem runSpeed
      */
-    void setSpeed(float speed);
+    void setSpeed(uint16_t speed);
 
-    void setStallGuardThreshold(int sgt);
-    void setStallDetectionThreshold(int threshold);
+    void setStallGuardThreshold(int8_t sgt);
+    void setStallDetectionThreshold(uint16_t threshold);
 
     // Actions
 
     void open();
     void close();
-    void openTo(float percentage);
+    void openTo(fract16 percentage);
 
     void openAsync();
     void closeAsync();
-    void openToAsync(float percentage);
+    void openToAsync(fract16 percentage);
 
     /**
      * Run the motor to implement speed and acceleration in order to proceed to the target position
@@ -167,34 +168,45 @@ private:
     /**
      * Move the motor in a particular direction until the motor stalls out.
      *
-     * @param direction The direction to move the motor into
+     * @param dir The direction to move the motor into
      * @return The number of steps that the motor performed before stalling
      */
-    int moveUntilStall(Direction direction);
+    uint16_t moveUntilStall(Direction dir);
 
     /** Move the stepper a particular number of millimeters */
-    void moveTo(int target);
-    void moveToBlocking(int position);
+    void moveTo(uint16_t target);
+    void moveToBlocking(uint16_t position);
 
     /** Move the stepper */
-    void move(int steps, Direction direction);
+    void move(uint16_t steps);
 
-    void moveBlocking(int steps, Direction direction);
+    void moveBlocking(uint16_t steps);
 
     /** Clear all motor actions */
-    void stop();
+    [[maybe_unused]] void stop();
 
 
     // Stall Detection
 
     /** Variable that stores the stall state of the flower. */
-    unsigned long stall_read_time = 0;
-    unsigned long last_stall = 0;
+    uint32_t stall_read_time = 0;
+    uint32_t last_stall = 0;
 
-    /** When the stall guard result drops below this value, a stall is detected. [1, 1022] */
-    unsigned int stall_detection_threshold = 800;
-    int stall_guard_threshold = 30;
-    unsigned int stall_guard_result = 1023;
+    /**
+     * When the stall guard result drops below this value, a stall is detected.
+     * This value is an unsigned 10 bit number in the range [1, 1022].
+     * */
+    uint16_t stall_detection_threshold = 800;
+
+    /**
+     * The last stall guard reading.
+     * This value is a signed 7 bit number in the range [-64, 63].
+     */
+    uint16_t stall_guard_result = 1023;
+
+
+    // Motor positioning
+    uint16_t max_steps = 0;
 
     // Driver objects
     TMC2130Stepper driver;
@@ -205,10 +217,6 @@ private:
     uint8_t direction;
     uint8_t step;
     uint8_t chip_select;
-
-    // Motor positioning
-    int max_steps = 0;
 };
-
 
 #endif //FLOWER_FLOWER_H
