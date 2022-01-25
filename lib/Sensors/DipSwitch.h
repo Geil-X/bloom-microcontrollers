@@ -41,7 +41,7 @@ private:
 
 template<size_t MAX_PINS>
 DipSwitch<MAX_PINS>::DipSwitch(const int pins[]) {
-    for (int i = 0; i < MAX_PINS; i++) {
+    for (size_t i = 0; i < MAX_PINS; i++) {
         this->pins[i] = pins[i];
         pinMode(pins[i], INPUT_PULLUP);
     }

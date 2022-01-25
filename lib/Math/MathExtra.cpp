@@ -2,15 +2,16 @@
 #include <math.h>
 #include "MathExtra.h"
 
-float map(float amt, float from_low, float from_high, float to_low, float to_high) {
-    return to_low + (amt - from_low) * (to_high - to_low) / (from_high - from_low);
-}
-
 float zero(float _) { return 0; }
 
 float identity(float x) { return x; }
 
 float lerp(float t, float a, float b) {
+    t = constrain(t, 0, 1);
+    return (1 - t) * a + t * b;
+}
+
+float flerp(float t, float a, float b) {
     t = constrain(t, 0, 1);
     return (1 - t) * a + t * b;
 }
@@ -45,4 +46,20 @@ float sin(float t, float cycles) {
 
 float insin(float x, float cycles) {
     return (float) ((1. - sin(TWO_PI * x * cycles)) / 2.);
+}
+
+/// Get a random floating point number from 0-1
+float randomFloat() {
+
+    return static_cast <float> (random()) / static_cast <float> (RANDOM_MAX);
+}
+
+/// Get a random floating point number from 0-max
+float randomFloat(float max) {
+    return static_cast <float> (random()) / (static_cast <float> ((float) RANDOM_MAX / max));
+}
+
+/// Get a random floating point number from min-max
+float randomFloat(float min, float max) {
+    return min + (float) random() / ((float) RANDOM_MAX / (max - min));
 }

@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-Log::LogLevel Log::log_level = RESPONSE;
+Log::LogLevel Log::log_level = NONE;
 
 void Log::connect(LogLevel level, uint32_t baud) {
     log_level = level;

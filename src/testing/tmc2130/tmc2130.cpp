@@ -1,11 +1,12 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <TMCStepper.h>
 #include <AccelStepper.h>
+#include "Interrupt.h"
 
 // ---- Initialization ----
 
 // Stepper Pins
-#define DIAG1_PIN   3
 #define EN_PIN      7
 #define DIR_PIN     8
 #define STEP_PIN    9
@@ -23,18 +24,19 @@
 TMC2130Stepper driver(CS_PIN, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
 AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 
-// Stall detection
-volatile bool stalled = false;
+ISR(TIMER1_COMPA_vect) {
+    stepper.runSpeed();
+}
 
-void onStall() {
-    stalled = true;
+// Stall detection
+bool stalled() {
+    return driver.sg_result() < 950;
 }
 
 // ---- Main Functions ----
 
 void setup() {
     // Driver Initialization
-    pinMode(DIAG1_PIN, INPUT);
     pinMode(CS_PIN, OUTPUT);
     pinMode(EN_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
@@ -55,7 +57,8 @@ void setup() {
     driver.pwm_autoscale(true);
     driver.pwm_ampl(255);
     driver.hysteresis_start(4);
-    driver.hysteresis_start(0);
+    driver.hysteresis_end(0);
+    driver.chm(true); // Disable spread cycle
     driver.semin(5);
     driver.semax(2);
     driver.sedn(0b01);
@@ -64,27 +67,22 @@ void setup() {
     driver.THIGH(0);
 
     // Stall detection
-    driver.sgt(60);
-    driver.diag1_stall(true);
-    driver.diag1_pushpull(true);  // Active high
-
-    attachInterrupt(digitalPinToInterrupt(DIAG1_PIN), onStall, RISING);
+    driver.sgt(14);
 
     // Stepper Initialization
-    stepper.setMaxSpeed(10000);
+    stepper.setMaxSpeed(15000);
     stepper.setAcceleration(5000);
     stepper.setSpeed(5000);
 
     stepper.setEnablePin(EN_PIN);
     stepper.setPinsInverted(false, false, true);
     stepper.enableOutputs();
+
+    setUpInterrupts(18);
 }
 
 void loop() {
-    if (stalled) {
+    if (stalled()) {
         driver.shaft(!driver.shaft());
-        stalled = false;
     }
-
-    stepper.runSpeed();
 }

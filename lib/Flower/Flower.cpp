@@ -6,15 +6,11 @@ using namespace TMC2130_n;
 // Set stepper driver microsteps [1-255]
 #define MICROSTEPS 16
 
-#define STALL_BUFFER 250 // ms
-#define STALL_CHECK_TIME 1 // ms
+#define STALL_BUFFER 150 // ms
+#define STALL_CHECK_TIME 5 // ms
 
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
-
-// Resistors in the voltage dividers for measuring the motor voltage
-#define VOLTAGE_RESISTOR_1 1000  // 1M Ohm
-#define VOLTAGE_RESISTOR_2 100   // 100k Ohm
 
 
 enum SPREAD_CYCLE {
@@ -25,18 +21,15 @@ enum SPREAD_CYCLE {
 
 Flower::Flower(
         uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
-        uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1,
-        uint8_t vm)
+        uint8_t mosi, uint8_t miso, uint8_t sck)
         : driver(cs, R_SENSE, mosi, miso, sck),
-          stepper(stepper.DRIVER, step, dir),
-          motor_voltage(vm, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2) {
+          stepper(stepper.DRIVER, step, dir) {
 
     // Pin initialization
     this->enable = en;
     this->direction = dir;
     this->step = step;
     this->chip_select = cs;
-    this->diag1 = diag1;
     this->stall_read_time = millis();
 }
 
@@ -45,12 +38,10 @@ Flower::Flower(
 void Flower::setup() {
     setupDriver();
     setupStepper();
-
 }
 
 void Flower::setupDriver() {
     // Enable the chip select pin
-    pinMode(diag1, INPUT);
     pinMode(chip_select, OUTPUT);
     pinMode(enable, OUTPUT);
     pinMode(direction, OUTPUT);
@@ -183,9 +174,11 @@ void Flower::home() {
     int delay_ms = 200;
 
     // Set homing routine parameters
-    setMaxSpeed(5000);
-    setAcceleration(2000);
-    setSpeed(500);
+    setMaxSpeed(15000);
+    setAcceleration(5000);
+    setSpeed(5000);
+    setStallGuardThreshold(15);
+    setStallDetectionThreshold(950);
 
     // Fully open the motor
     delay(delay_ms);
@@ -209,6 +202,14 @@ void Flower::home() {
 
 // ---- Accessor Functions ----
 
+float Flower::getPosition() {
+#if defined(OPEN_CLOCKWISE)
+    return (float) stepper.currentPosition() / max_steps;
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    return (float) (max_steps - stepper.currentPosition()) / max_steps;
+#endif
+}
+
 int Flower::getStallGuardThreshold() const {
     return stall_guard_threshold;
 }
@@ -225,6 +226,25 @@ unsigned int Flower::getStallGuardResult() const {
     return stall_guard_result;
 }
 
+bool Flower::isOpen() {
+#if defined(OPEN_CLOCKWISE)
+    return stepper.currentPosition() == max_steps;
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    return stepper.currentPosition() == 0;
+#endif
+}
+
+bool Flower::isClosed() {
+#if defined(OPEN_CLOCKWISE)
+    return stepper.currentPosition() == 0;
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    return stepper.currentPosition() == max_steps;
+#endif
+}
+
+bool Flower::isAtTarget() {
+    return stepper.distanceToGo() == 0;
+}
 
 // ---- Modifier Functions ----
 
@@ -310,13 +330,13 @@ void Flower::openToAsync(float percentage) {
 }
 
 bool Flower::run() {
-    bool stepped = stepper.run();
-    return stepped;
+//    updateStallParameters();
+    return stepper.run();
 }
 
 bool Flower::runSpeed() {
-    bool stepped = stepper.runSpeed();
-    return stepped;
+//    updateStallParameters();
+    return stepper.runSpeed();
 }
 
 void Flower::move(int steps, Direction direction) {
@@ -360,8 +380,9 @@ void Flower::stop() {
 }
 
 void Flower::updateStallParameters() {
-    auto current_speed = (int) stepper.speed();
-    if (current_speed < STALL_TABLE[0][SPEED_COLUMN]) {
+    float current_speed = stepper.speed();
+
+    if (current_speed < (float) STALL_TABLE[0][SPEED_COLUMN]) {
         stall_guard_threshold = STALL_TABLE[0][SGT_COLUMN];
         driver.sgt((int8_t) stall_guard_threshold);
         stall_detection_threshold = STALL_TABLE[0][STALL_DETECTION_COLUMN];
@@ -371,7 +392,7 @@ void Flower::updateStallParameters() {
     for (int i = 1; i < NUM_STALL_VALUES; i++) {
         int table_speed = STALL_TABLE[i][SPEED_COLUMN];
 
-        if (table_speed > current_speed) {
+        if ((float) table_speed > current_speed) {
             int lower_speed = STALL_TABLE[i - 1][SPEED_COLUMN];
             int upper_speed = STALL_TABLE[i][SPEED_COLUMN];
             int lower_sgt = STALL_TABLE[i - 1][SGT_COLUMN];
@@ -380,13 +401,13 @@ void Flower::updateStallParameters() {
             int upper_detection_threshold = STALL_TABLE[i][STALL_DETECTION_COLUMN];
 
             stall_guard_threshold = (int) map(
-                    current_speed,
+                    (int) current_speed,
                     lower_speed, upper_speed,
                     lower_sgt, upper_sgt);
             driver.sgt((int8_t) stall_guard_threshold);
 
             stall_detection_threshold = map(
-                    current_speed,
+                    (int) current_speed,
                     lower_speed, upper_speed,
                     lower_detection_threshold, upper_detection_threshold);
 
@@ -414,24 +435,3 @@ bool Flower::motorStalled() {
     }
     return false;
 }
-
-bool Flower::regainedPower() {
-    bool has_power = hasPower();
-    if (has_power && lost_power) {
-        Log::debug("Regained motor power");
-        lost_power = false;
-        return true;
-    }
-    if (!has_power && !lost_power) {
-        Log::debug("Regained motor power");
-        lost_power = true;
-        return false;
-    }
-    return false;
-}
-
-bool Flower::hasPower() {
-#define VOLTAGE_THRESHOLD 4.5 // volts
-    return motor_voltage.read() >= VOLTAGE_THRESHOLD;
-}
-

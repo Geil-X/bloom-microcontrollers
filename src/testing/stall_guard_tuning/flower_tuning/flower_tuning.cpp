@@ -1,15 +1,17 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <Logging.h>
 #include <Flower.h>
 #include <SerialTransfer.h>
 #include <Potentiometer.h>
 #include <Button.h>
+#include <Interrupt.h>
+#include <Logging.h>
+
+#define TRANSMISSION_RATE 5 // ms
 
 // Pin Definitions for different microcontrollers
 
 // Stepper Pins
-#define DIAG1_PIN 3
 #define EN_PIN    7
 #define DIR       8
 #define STEP      9
@@ -20,22 +22,21 @@
 #define MISO    12  // SDO
 #define SCK     13  // SPI Reference Clock
 
-// Sensor Pins
-#define MOTOR_VOLTAGE A0
-
-// Communication Rate
-#define COMMUNICATION_DELAY 1 // ms
-unsigned long last_communication = 0;
-
-Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK, DIAG1_PIN, MOTOR_VOLTAGE);
+Flower flower = Flower(EN_PIN, DIR, STEP, CS, MOSI, MISO, SCK);
 SerialTransfer serialTransfer;
 
-Potentiometer speedPot = Potentiometer(A3, 0, 10000);
-Potentiometer sgtPot = Potentiometer(A4, 5, 63);
+Potentiometer speedPot = Potentiometer(A3, 0, 15000);
+Potentiometer sgtPot = Potentiometer(A4, 0, 63);
 Potentiometer minimumStallThresholdPot = Potentiometer(A5, 1, 1022);
 Button enableButton = Button(2);
+Button homeButton = Button(4);
 
 bool enabled = true;
+unsigned long last_transfer = 0;
+
+ISR(TIMER1_COMPA_vect) {
+    if (enabled) { flower.runSpeed(); }
+}
 
 struct ControlParams {
     int speed = 0;
@@ -46,42 +47,46 @@ struct ControlParams {
 
 void setupFlower() {
     flower.setup();
-//    flower.home();
-    flower.setDirection(DIRECTION_OPEN);
     flower.setMaxSpeed(10000);
     flower.setAcceleration(5000);
-    flower.setSpeed(0);
+    flower.setSpeed(3000);
 }
 
 void setup() {
-    Log::connect(Log::NONE, 115200);
+    Log::connect(Log::PRINT);
     Serial.begin(115200);
     serialTransfer.begin(Serial);
-
-    while (!flower.hasPower()) {}
     setupFlower();
+
+    setUpInterrupts(18);
 }
 
 void setControlParameters() {
-    control.minimum_stall_threshold = minimumStallThresholdPot.value();
+    flower.updateStallParameters();
+    control.minimum_stall_threshold = (int) flower.getStallDetectionThreshold();
     control.speed = speedPot.value();
-    control.stall_guard_threshold = sgtPot.value();
+    control.stall_guard_threshold = flower.getStallGuardThreshold();
     control.stall_value = (int) flower.getStallGuardResult();
 
     flower.setSpeed((float) control.speed);
-    flower.setStallGuardThreshold(control.stall_guard_threshold);
-    flower.setStallDetectionThreshold(control.minimum_stall_threshold);
+//    flower.setStallGuardThreshold(control.stall_guard_threshold);
+//    flower.setStallDetectionThreshold(control.minimum_stall_threshold);
 }
 
 __attribute__((unused)) void loop() {
-    if (millis() - last_communication > COMMUNICATION_DELAY) {
+    unsigned long ms = millis();
+    if (ms - last_transfer > TRANSMISSION_RATE) {
         setControlParameters();
         serialTransfer.sendDatum(control);
-        last_communication = millis();
-
-        if (flower.regainedPower()) { setupFlower(); }
-        if (enableButton.isPressed()) { enabled = !enabled; }
+        last_transfer = ms;
     }
+
+    if (enableButton.isPressed()) { enabled = !enabled; }
+    if (homeButton.isPressed()) {
+        enabled = false;
+        flower.home();
+    }
+
     if (flower.motorStalled()) { flower.reverse(); }
-    if (enabled) { flower.runSpeed(); }
+
 }

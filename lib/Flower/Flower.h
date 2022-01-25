@@ -28,8 +28,7 @@ enum Direction {
 class Flower {
 public:
     Flower(uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
-           uint8_t mosi, uint8_t miso, uint8_t sck, uint8_t diag1,
-           uint8_t vm);
+           uint8_t mosi, uint8_t miso, uint8_t sck);
 
 
     // Main Functions
@@ -50,10 +49,17 @@ public:
 
     // Accessor Functions
 
+    /**
+     * @return The position of the flower from 0 (closed) to 1 (open)
+     */
+    float getPosition();
     int getStallGuardThreshold() const;
     unsigned int getStallDetectionThreshold() const;
     unsigned long getSpeed();
     unsigned int getStallGuardResult() const;
+    bool isOpen();
+    bool isClosed();
+    bool isAtTarget();
 
     // Modifier Functions
 
@@ -119,6 +125,13 @@ public:
      */
     bool runSpeed();
 
+    /**
+     * Update the stall guard parameters based on the current running speed.
+     * The motor driver stall guard threshold and the maximum detection
+     * threshold need to be adjusted because they are speed dependent.
+     */
+    void updateStallParameters();
+
     // Accessors
 
     /**
@@ -127,19 +140,6 @@ public:
      * false.
      * */
     bool motorStalled();
-
-    /**
-     * Check if the motor has regained power. This is a read and clear
-     * operation.
-     *
-     * @note This function should be called fairly often so that it can monitor
-     *       for power outages and check for moments when power is regained.
-     *
-     * @return If the motor has regained power.
-     */
-    bool regainedPower();
-
-    bool hasPower();
 
     /** Reverse the motor direction */
     void reverse();
@@ -187,38 +187,24 @@ private:
 
     // Stall Detection
 
-    /**
-     * Update the stall guard parameters based on the current running speed.
-     * The motor driver stall guard threshold and the maximum detection
-     * threshold need to be adjusted because they are speed dependent.
-     */
-    void updateStallParameters();
-
     /** Variable that stores the stall state of the flower. */
     unsigned long stall_read_time = 0;
     unsigned long last_stall = 0;
 
     /** When the stall guard result drops below this value, a stall is detected. [1, 1022] */
     unsigned int stall_detection_threshold = 800;
-    int stall_guard_threshold = 63;
+    int stall_guard_threshold = 30;
     unsigned int stall_guard_result = 1023;
-
-    /** Voltage Detection */
-    bool lost_power = false;
 
     // Driver objects
     TMC2130Stepper driver;
     AccelStepper stepper;
-
-    // Sensors
-    VoltageSensor motor_voltage;
 
     // Pins
     uint8_t enable;
     uint8_t direction;
     uint8_t step;
     uint8_t chip_select;
-    uint8_t diag1;
 
     // Motor positioning
     int max_steps = 0;

@@ -21,8 +21,9 @@ public:
      *           larger than the r2 resistor.
      * @param r2 The value of the resistor in kilohms between the analog read
      *           pin and the ground.
+     * @param threshold_voltage The voltage at which something is considered on
      */
-    VoltageSensor(uint8_t pin, int r1, int r2);
+    VoltageSensor(uint8_t pin, int r1, int r2, float threshold_voltage);
 
     /**
      * Read the voltage connected to the voltage sensor. The precision of the
@@ -42,10 +43,16 @@ public:
      */
     float read();
 
+    bool hasPower();
+    bool lostPower();
+    bool gainedPower();
+
 private:
     uint8_t pin;
     float max_voltage;
-    RunningMedian voltage = RunningMedian(19);
+    float threshold_voltage;
+    RunningMedian runningVoltage = RunningMedian(19);
+    bool has_power = false;
 };
 
 #endif //FLOWER_VOLTAGESENSOR_H

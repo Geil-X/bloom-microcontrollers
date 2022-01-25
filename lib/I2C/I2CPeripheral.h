@@ -12,7 +12,12 @@ public:
      */
     static void join(int device);
 
-    static void executeCommand(Flower &flower);
+    /**
+     * Execute the next command in the I2C buffer.
+     * @param flower The device to execute the command on.
+     * @return True if a command was executed.
+     */
+    static bool executeCommand(Flower &flower);
 
 private:
     /**

@@ -6,6 +6,10 @@
 #include <noise.h>
 #include <easing.h>
 #include <Logging.h>
+#include "LedIndicator.h"
+
+// Pin Listing
+#define IND_PIN 14
 
 // Device Parameters
 #define COMMAND_DELAY 5 // ms
@@ -16,6 +20,7 @@ Choreography<SEQUENCE_COUNT> choreography;
 #define DEVICE_COUNT 2
 int devices[DEVICE_COUNT] = {16, 17};
 unsigned long last_command;
+LedIndicator ledIndicator(IND_PIN);
 
 
 /** Go from open state to wandering back to the open state. */
@@ -43,6 +48,8 @@ void setup() {
     I2CController::join();
     choreography = Choreography<SEQUENCE_COUNT>()
             .addSequence(600.f, wander);
+    ledIndicator.blinkBlocking(50, 50, 5);
+    ledIndicator.blink(2000, 2000);
 }
 
 void sendCommand() {
@@ -61,4 +68,6 @@ __attribute__((unused)) void loop() {
         sendCommand();
         last_command = milliseconds;
     }
+
+    ledIndicator.update();
 }

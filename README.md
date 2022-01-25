@@ -34,13 +34,32 @@ platform = atmelavr
 board = uno
 ```
 
-### [Arduino Uno Rev2](https://docs.platformio.org/en/latest/boards/atmelmegaavr/uno_wifi_rev2.html)
+### [ATmega328P](https://docs.platformio.org/en/latest/boards/atmelavr/ATmega328P.html)
+
+#### With 16 MHz External Clock
 
 ```pio
-[env:uno_wifi_rev2]
-platform = atmelmegaavr
-board = uno_wifi_rev2
+platform = atmelavr
+framework = arduino
+board = ATmega328P
+board_build.mcu = atmega328p
+board_build.f_cpu = 16000000L
+upload_speed = 115200
+monitor_speed = 115200
 ```
+
+#### With 8 Mhz Internal Clock
+
+```pio
+platform = atmelavr
+framework = arduino
+board = 328p8m
+board_build.mcu = atmega328p
+board_build.f_cpu 	= 8000000L
+upload_speed 		= 57600
+monitor_speed 		= 57600
+```
+
 
 ### [Arduino Atmega 2560](https://docs.platformio.org/en/latest/boards/atmelavr/megaatmega2560.html)
 

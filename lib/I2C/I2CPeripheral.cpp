@@ -17,9 +17,10 @@ void I2CPeripheral::receiveCommand(int size) {
 /**
  * We need to clear the volatile command when returning a copy of that command.
  */
-void I2CPeripheral::executeCommand(Flower &flower) {
-    if (I2CCommandFactory::isNoCommand(packet)) return;
+bool I2CPeripheral::executeCommand(Flower &flower) {
+    if (I2CCommandFactory::isNoCommand(packet)) return false;
 
     I2CCommandFactory::executePacket(packet, flower);
     packet = I2CCommandFactory::noCommandPacket();
+    return true;
 }

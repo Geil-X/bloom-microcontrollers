@@ -19,7 +19,7 @@ public:
         NONE,
     };
 
-    static void connect(LogLevel level = INFO, uint32_t buad = 9600);
+    static void connect(LogLevel level = INFO, uint32_t buad = 115200);
 
     static void debug(const String &message);
     static void info(const String &message);

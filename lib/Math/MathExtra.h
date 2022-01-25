@@ -1,7 +1,10 @@
 #ifndef FLOWER_MATHEXTRA_H
 #define FLOWER_MATHEXTRA_H
 
-float map(float amt, float from_low, float from_high, float to_low, float to_high);
+//#define map(amt, from_low, from_high, to_low, to_high) to_low + (amt - from_low) * (to_high - to_low) / (from_high - from_low)
+
+
+//float map(float amt, float from_low, float from_high, float to_low, float to_high);
 
 float zero(float _);
 
@@ -15,6 +18,15 @@ float identity(float x);
  * @return The interpolated value between a and b.
  */
 float lerp(float t, float a, float b);
+
+/**
+ * Linearly interpolate between two values.
+ * @param a The initial value.
+ * @param b The final value.
+ * @param t The interpolation value. Value is clamped in the range [0, 1]. 0 just the a value, and 1 is just the b value.
+ * @return The interpolated value between a and b.
+ */
+float flerp(float a, float b, float t);
 
 /** Invert a value within the range 0 -> 1 */
 float inverse(float x);
@@ -77,5 +89,13 @@ float sin(float t, float cycles = 1);
  * @return Normalized cosine function with results between 0 and 1 inclusive.
  */
 float insin(float x, float cycles = 1.);
+
+/**
+ * Generate a random floating point number between min and max
+ * @param min The minimum floating point value you are looking for
+ * @param max The maximum floating point value you are looking for
+ * @return A random floating point number between min and max
+ */
+float randomFloat(float min, float max);
 
 #endif //FLOWER_MATHEXTRA_H

@@ -6,6 +6,7 @@
 #include <SerialTransfer.h>
 #include <Potentiometer.h>
 #include <Button.h>
+#include "Interrupt.h"
 
 SerialTransfer serialTransfer;
 
@@ -32,10 +33,11 @@ AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 
 // Stall Detection
 #define STALL_REFRESH_RATE 5
-#define STALL_BUFFER 500
+#define STALL_BUFFER 150
 
 unsigned long last_stall = 0;
 unsigned long stall_buffer = 0;
+
 
 struct ControlParams {
     int speed = 0;
@@ -50,6 +52,10 @@ Potentiometer minimumStallThresholdPot = Potentiometer(A5, 1, 1022);
 Button enableButton = Button(2);
 
 bool enabled = false;
+
+ISR(TIMER1_COMPA_vect) {
+    if (enabled) { stepper.runSpeed(); }
+}
 
 // ---- Main Functions ----
 
@@ -100,6 +106,7 @@ void setup() {
     stepper.setPinsInverted(false, false, true);
     stepper.enableOutputs();
 
+    setUpInterrupts(18);
 }
 
 void setControlParameters() {
@@ -116,7 +123,7 @@ __attribute__((unused)) void loop() {
 
     if (ms - last_stall > STALL_REFRESH_RATE) {
         setControlParameters();
-        control.stall_value = driver.sg_result();
+        control.stall_value = (int) driver.sg_result();
 
         if (ms - stall_buffer < STALL_BUFFER) {
 //            control.stall_guard_threshold = 63;
@@ -132,5 +139,4 @@ __attribute__((unused)) void loop() {
     }
 
     if (enableButton.isPressed()) enabled = !enabled;
-    if (enabled) stepper.runSpeed();
 }

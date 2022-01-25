@@ -9,7 +9,7 @@ Potentiometer::Potentiometer(uint8_t potentiometer_pin, int low, int high) {
 }
 
 int Potentiometer::value() {
-    int reading =  (int) map(analogRead(potentiometer_pin), 0, ANALOG_IN_MAX, high, low);
+    int reading =  (int) map(analogRead(potentiometer_pin), 0, ANALOG_IN_MAX, low, high);
     runningMedian.add((float) reading);
     return (int) runningMedian.getMedian();
 }
