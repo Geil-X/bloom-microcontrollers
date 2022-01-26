@@ -11,7 +11,6 @@
 #include <FastLED.h>
 #include "Flower.h"
 #include "MathExtra.h"
-#include "Color.h"
 #include "Angle.h"
 #include "CircularGradient.h"
 #include "AceSorting.h"
@@ -53,7 +52,6 @@ public:
     }
 
     void controlLights(uint16_t millis, Flower &flower, CRGB leds[], uint8_t numLeds) override {
-//        angle8 globalOffset = inoise8(millis / 10, (uint16_t) flower.getPosition() / 5) * 3;
         angle8 globalOffset = inoise8(flower.getPosition() / 250) * 5;
 
         for (int i = 0; i < numLeds; i++) {
@@ -132,7 +130,7 @@ public:
 
     void controlLights(uint16_t millis, Flower &flower, CRGB leds[], uint8_t numLeds) override {
         for (int i = 0; i < numLeds; i++) {
-            leds[i] = Color::Red;
+            leds[i] = CRGB::Red;
         }
     }
 };

@@ -7,9 +7,7 @@
 #include <MathExtra.h>
 
 #include "FastLED.h"
-#include "ProceduralColor.h"
 #include "Personality.h"
-#include "LightModes.h"
 
 Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
 VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2, MOTOR_VOLTAGE_THRESHOLD);
