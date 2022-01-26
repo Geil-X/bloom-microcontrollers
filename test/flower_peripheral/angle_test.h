@@ -2,35 +2,22 @@
 #define FLOWER_ANGLE_TEST_H
 
 #include <unity.h>
-
 #include <Angle.h>
 
 void test_shortest_distance() {
-    Angle first = 10;
-    Angle second = 50;
-    Angle actual = first.shortestDistance(second);
-    TEST_ASSERT_EQUAL_UINT8(40, actual.theta);
+    TEST_ASSERT_EQUAL_UINT8(40, minDelta8(10, 50));
 }
 
 void test_shortest_distance_edge_case() {
-    Angle first = 10;
-    Angle second = 200;
-    Angle actual = first.shortestDistance(second);
-    TEST_ASSERT_EQUAL_UINT8(65, actual.theta);
+    TEST_ASSERT_EQUAL_UINT8(65, minDelta8(10, 200));
 }
 
 void test_longest_distance() {
-    Angle first = 10;
-    Angle second = 50;
-    Angle actual = first.longestDistance(second);
-    TEST_ASSERT_EQUAL_UINT8(215, actual.theta);
+    TEST_ASSERT_EQUAL_UINT8(215, maxDelta8(10, 50));
 }
 
 void test_longest_distance_edge_case() {
-    Angle first = 10;
-    Angle second = 200;
-    Angle actual = first.longestDistance(second);
-    TEST_ASSERT_EQUAL_UINT8(190, actual.theta);
+    TEST_ASSERT_EQUAL_UINT8(190, maxDelta8(10, 200));
 }
 
 void angle_test() {

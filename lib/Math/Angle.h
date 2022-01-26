@@ -25,7 +25,7 @@ typedef uint16_t angle16;
  * @param to The second angle
  * @return The shortest modular distance between two angles.
  */
-inline angle8 minDelta8(angle8 from, angle8 to) {
+[[maybe_unused]] inline angle8 minDelta8(angle8 from, angle8 to) {
     angle8 delta = max(from, to) - min(from, to);
     if (delta > 127) { // Half of UINT8_MAX
         return UINT8_MAX - delta;
@@ -39,7 +39,7 @@ inline angle8 minDelta8(angle8 from, angle8 to) {
  * @param to The second angle
  * @return The longest modular distance between two angles.
  */
-inline angle8 maxDelta8(angle8 from, angle8 to) {
+[[maybe_unused]] inline angle8 maxDelta8(angle8 from, angle8 to) {
     angle8 delta = max(from, to) - min(from, to);
     if (delta < 128) { // Half of UINT8_MAX
         return UINT8_MAX - delta;
@@ -53,7 +53,7 @@ inline angle8 maxDelta8(angle8 from, angle8 to) {
  * @param to The second angle
  * @return The shortest modular distance between two angles.
  */
-inline angle16 minDelta16(angle16 from, angle16 to) {
+[[maybe_unused]] inline angle16 minDelta16(angle16 from, angle16 to) {
     angle16 delta = max(from, to) - min(from, to);
     if (delta > 32767) { // Half of UINT16_MAX
         return UINT16_MAX - delta;
@@ -67,7 +67,7 @@ inline angle16 minDelta16(angle16 from, angle16 to) {
  * @param to The second angle
  * @return The longest modular distance between two angles.
  */
-inline angle16 maxDelta16(angle16 from, angle16 to) {
+[[maybe_unused]] inline angle16 maxDelta16(angle16 from, angle16 to) {
     angle16 delta = max(from, to) - min(from, to);
     if (delta < 32768) { // Half of UINT16_MAX
         return UINT16_MAX - delta;

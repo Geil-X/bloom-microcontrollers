@@ -4,8 +4,7 @@
 #include <unity.h>
 #include <FastLED.h>
 
-//#include <CircluarGradient.h>
-#include "../../lib/Lights/CircularGradient.h"
+#include <CircularGradient.h>
 
 CRGB color1 = CRGB(0, 0, 0);
 CRGB color2 = CRGB(100, 100, 100);
@@ -13,10 +12,10 @@ CRGB color3 = CRGB(200, 200, 200);
 
 #define NUM_COLORS 3
 
-CircularColorNode circularGradient[NUM_COLORS] = {
-        CircularColorNode(color1, 50),
-        CircularColorNode(color2, 100),
-        CircularColorNode(color3, 205)};
+CircularColorNode *circularGradient[NUM_COLORS] = {
+        new CircularColorNode(color1, 50),
+        new CircularColorNode(color2, 100),
+        new CircularColorNode(color3, 205)};
 
 void test_assert_equal_crgb(CRGB expected, CRGB actual) {
 //    Serial.println(String(expected.r) + "  :  " + String(actual.r));
