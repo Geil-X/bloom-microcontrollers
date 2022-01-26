@@ -1,12 +1,9 @@
 #include <Arduino.h>
 
 #include <I2CController.h>
-#include <MathExtra.h>
 #include <Choreography.h>
-#include <noise.h>
-#include <easing.h>
 #include <Logging.h>
-#include "LedIndicator.h"
+#include <LedIndicator.h>
 
 // Pin Listing
 #define IND_PIN 14
@@ -22,32 +19,11 @@ int devices[DEVICE_COUNT] = {16, 17};
 unsigned long last_command;
 LedIndicator ledIndicator(IND_PIN);
 
-
-/** Go from open state to wandering back to the open state. */
-float wander(float t, int seed, float duration, float x, float y) {
-    const float seconds_per_sync = 30.f;
-    float shared_cycles = duration / seconds_per_sync;
-
-    const float seconds_per_cycle = 4.f;
-    float noise_cycles = duration / seconds_per_cycle;
-
-    // Individual Wander
-    float individual_noise = noise3d(t * noise_cycles, x, y, 3, .25, seed);
-    float eased_noise = easeInOutBack(individual_noise);
-
-    // Combined wander
-    float shared_noise = noise3d(t * noise_cycles, x, y, 2, .25, seed);
-    float shared_eased_noise = easeInOutSine(shared_noise);
-
-    return lerp(ncos(t, shared_cycles), eased_noise, shared_eased_noise);
-}
-
 void setup() {
     Log::connect();
     Log::info("Running flower choreography");
     I2CController::join();
-    choreography = Choreography<SEQUENCE_COUNT>()
-            .addSequence(600.f, wander);
+    choreography = Choreography<SEQUENCE_COUNT>();
     ledIndicator.blinkBlocking(50, 50, 5);
     ledIndicator.blink(2000, 2000);
 }
