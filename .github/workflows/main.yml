@@ -13,7 +13,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -34,10 +33,18 @@ jobs:
           pip install --upgrade platformio
 
       - name: Run PlatformIO
-        run: pio run -e flower_choreography -e flower_peripheral
+        run: pio run -e flower_choreography -e flower_peripheral -e  flower_emotional_standalone
+
+      - name: Move Binary Files
+        shell: bash
+        run: |
+          mkdir .pio/build/firmware
+          mv .pio/build/flower_choreography/firmware.hex .pio/build/firmware/flower_choreography.hex
+          mv .pio/build/flower_peripheral/firmware.hex .pio/build/firmware/flower_peripheral.hex
+          mv .pio/build/flower_emotional_standalone/firmware.hex .pio/build/firmware/flower_emotional_standalone.hex
 
       - name: Store Group Communication Binary Hex Firmware
         uses: actions/upload-artifact@v2
         with:
-          name: group_comm
-          path: .pio/build/group_comm/firmware.hex
+          name: flower_firmware
+          path: .pio/build/firmware/*
