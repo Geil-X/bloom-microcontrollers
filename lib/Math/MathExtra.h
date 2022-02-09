@@ -23,4 +23,23 @@ static inline uint16_t map16(uint16_t in, uint16_t rangeStart, uint16_t rangeEnd
     return out;
 }
 
+
+static inline uint16_t map16Max(uint16_t x, uint16_t in_max, uint16_t out_max) {
+    return x * (out_max / in_max);
+}
+
+static inline float mapf(float x, float in_min, float in_max, float out_min, float out_max) {
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+/**
+ * Keep the 8 most significant bits of a 16 bit fractional number and convert it into the smaller 8 bit fractional
+ * @param f The input 16 bit fractional number
+ * @return The 8 bit fractional number
+ */
+static inline fract8 fract16ToFract8(fract16 f) {
+    return (fract8) (f >> 8);
+}
+
+
 #endif //FLOWER_MATHEXTRA_H

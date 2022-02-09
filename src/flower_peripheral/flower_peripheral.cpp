@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <SerialTransfer.h>
 #include <Wire.h>
+
 #include <I2CPeripheral.h>
 #include <DipSwitch.h>
 #include <Logging.h>
@@ -7,12 +9,18 @@
 #include <LedIndicator.h>
 #include <MorningGlory.h>
 
+
+// Peripheral Devices
 int dip_pins[DIP_PIN_COUNT] = DIP_PINS;
 DipSwitch<DIP_PIN_COUNT> dip_switch = DipSwitch<DIP_PIN_COUNT>(dip_pins);
 
 Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
 VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2, MOTOR_VOLTAGE_THRESHOLD);
 LedIndicator ledIndicator(IND_PIN);
+
+// Communication
+SerialTransfer i2cProtocol;
+I2CPeripheral peripheralCommunication(i2cProtocol);
 
 ISR(TIMER1_COMPA_vect) {
     flower.run();
@@ -31,17 +39,24 @@ void setupFlower() {
 }
 
 void setup() {
+    // Setup serial communication
     Log::connect();
     Log::info("Booting up flower peripheral");
+
+    // Initialize I2C Communication
     uint8_t device_id = dip_switch.value() + 16;
     Log::info("Connecting to I2C on channel: " + String(device_id));
-    I2CPeripheral::join(device_id);
+    Wire.begin(device_id);
+    i2cProtocol.begin(Wire);
 
+    // Wait until the program receives 12v motor input voltage
     ledIndicator.blink(250, 250);
     while (!motorVoltage.hasPower()) {
         ledIndicator.update();
     }
+    Log::info("Motor has power");
 
+    // Run flower setup
     ledIndicator.blinkBlocking(50, 50, 5);
     ledIndicator.on();
     setupFlower();
@@ -51,7 +66,7 @@ void setup() {
 }
 
 __attribute__((unused)) void loop() {
-    if (I2CPeripheral::executeCommand(flower)) {
+    if (peripheralCommunication.executeCommandFromWire(flower)) {
         ledIndicator.blinkBlocking(1, 0, 1);
     }
 

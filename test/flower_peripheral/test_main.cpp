@@ -13,7 +13,7 @@ int main() {
 
     angle_test();
     color_gradient_test();
-//    dip_switch_test();
+    dip_switch_test();
 
     UNITY_END(); // stop unit testing
 }

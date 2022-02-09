@@ -13,9 +13,6 @@
 #include "MathExtra.h"
 #include "Angle.h"
 #include "CircularGradient.h"
-#include "AceSorting.h"
-
-using ace_sorting::shellSortKnuth;
 
 enum Speed {
     SLOW_SPEED = 500,
@@ -112,7 +109,7 @@ private:
  * Coloring:
  *     Show flashes of color at jarring intervals.
  */
-class Scared : IEmotionState {
+class Angry : IEmotionState {
 public:
     void initFlower(Flower &flower) override {
         flower.setAcceleration(FAST_ACCELERATION);

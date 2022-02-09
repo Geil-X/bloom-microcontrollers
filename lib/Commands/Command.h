@@ -2,8 +2,7 @@
 #define COMMANDS_COMMAND_H
 
 #include <Flower.h>
-
-// ---- Abstract Base Class ----
+#include <FastLED.h>
 
 namespace Command {
     enum Id : unsigned char {
@@ -25,11 +24,11 @@ namespace Command {
 
     void close(Flower &flower);
 
-    void openTo(Flower &flower, float percentage);
+    void openTo(Flower &flower, fract16 percentage);
 
-    void speed(Flower &flower, int speed);
+    void speed(Flower &flower, uint16_t speed);
 
-    void acceleration(Flower &flower, int acceleration);
+    void acceleration(Flower &flower, uint16_t acceleration);
 }
 
 #endif  // COMMANDS_COMMAND_H

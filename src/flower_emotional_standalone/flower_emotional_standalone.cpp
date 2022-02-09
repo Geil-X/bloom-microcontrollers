@@ -1,34 +1,36 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <FastLED.h>
+
 #include <Logging.h>
 #include <Interrupt.h>
 #include <Flower.h>
 #include <MorningGlory.h>
-#include <MathExtra.h>
+#include <Personality.h>
+#include <EmotionController.h>
+#include <LedIndicator.h>
 
-#include "FastLED.h"
-#include "Personality.h"
 
-Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
-VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2, MOTOR_VOLTAGE_THRESHOLD);
-
+// Emotional States
 Excited *excited = new Excited();
 Sleepy *sleepy = new Sleepy();
-Scared *scared = new Scared();
+Angry *scared = new Angry();
 Curious *curious = new Curious();
 
-IEmotionState *currentEmotion = (IEmotionState *) sleepy;
+uint32_t emotionDuration = 20 * 1000; // ms
+uint32_t emotionTransitionTime = 5 * 1000; // ms
+EmotionController emotionController((IEmotionState *) excited);
+
+// Controllers and Sensors
+Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
+VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_RESISTOR_2, MOTOR_VOLTAGE_THRESHOLD);
+LedIndicator ledIndicator(IND_PIN);
 
 // Neo Pixel Led
 #define DATA_PIN 6
 #define NUM_LEDS 12
-#define MAX_BRIGHTNESS 100 // watch the power!
-CRGB currentLeds[NUM_LEDS];
-CRGB blendLeds[NUM_LEDS];
-
-float emotionStartTime = 0.f;
-float emotionDuration = 15.0f;
-float emotionBlendTime = 5.f;
+#define MAX_BRIGHTNESS 100
+CRGB leds[NUM_LEDS];
 
 ISR(TIMER1_COMPA_vect) {
     flower.run();
@@ -43,83 +45,72 @@ void setupFlower() {
     Log::info("Setting up `flower.run()` interrupts");
     setUpInterrupts(18);
 
-    currentEmotion->initFlower(flower);
+    emotionController.initFlower(flower);
 }
 
 void setup() {
+    // Setup serial communication
     Log::connect();
     Log::info("Waiting for motor to gain power");
-    while (!motorVoltage.hasPower()) {}
+
+    // Wait until the program receives 12v motor input voltage
+    ledIndicator.blink(250, 250);
+    while (!motorVoltage.hasPower()) {
+        ledIndicator.update();
+    }
     Log::info("Motor has power");
 
-    // Setup the Neopixel
+    // Set up the neo-pixel
     FastLED.setBrightness(MAX_BRIGHTNESS);
-    FastLED.addLeds<WS2812B, DATA_PIN, GRB>(currentLeds, NUM_LEDS);
+    CFastLED::addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
 
+    // Run flower setup
+    ledIndicator.blinkBlocking(50, 50, 5);
+    ledIndicator.on();
     setupFlower();
-    Log::info("Running in excited state");
+    ledIndicator.blinkBlocking(50, 50, 5);
+
+    ledIndicator.on();
 }
 
-String rgbToString(const CRGB &rgb) {
-    return "Xyz(" + String(rgb.r) + ", " + String(rgb.g) + ", " + String(rgb.b) + ")";
-}
-
-void getNextEmotion() {
+IEmotionState* getNextEmotion() {
     switch (random8(4)) {
-        case 0:
-            Log::info("Running in excited state");
-            currentEmotion = (IEmotionState *) excited;
-            break;
-        case 1:
-            Log::info("Running in sleepy state");
-            currentEmotion = (IEmotionState *) sleepy;
-            break;
-        case 2:
-            Log::info("Running in scared state");
-            currentEmotion = (IEmotionState *) scared;
-            break;
-        case 3:
-            Log::info("Running in curious state");
-            currentEmotion = (IEmotionState *) curious;
-            break;
-        default:
-            Log::info("Running in excited state by default");
-            currentEmotion = (IEmotionState *) excited;
-            break;
+        case 0: return (IEmotionState *) excited;
+        case 1: return (IEmotionState *) sleepy;
+        case 2: return (IEmotionState *) scared;
+        case 3: return (IEmotionState *) curious;
+        default: return (IEmotionState *) excited;
     }
-
-    currentEmotion->initFlower(flower);
-}
-
-void choreography() {
-    currentEmotion->controlMotor(millis(), flower);
-    currentEmotion->controlLights(millis(), flower, currentLeds, NUM_LEDS);
 }
 
 __attribute__((unused)) void loop() {
-    float seconds = (float) millis() / 1000.f;
+    uint32_t ms = millis();
 
     if (motorVoltage.lostPower()) {
         Log::info("Motor lost power");
+        ledIndicator.blink(250, 250);
     }
 
     if (motorVoltage.gainedPower()) {
         Log::info("Motor regained power");
-        delay(500);
+        ledIndicator.blinkBlocking(100, 100, 10);
         setupFlower();
     }
 
     if (flower.motorStalled()) {
-        delay(500);
+        Log::info("Motor stalled");
+        ledIndicator.blinkBlocking(50, 50, 20);
         flower.home();
     }
 
-    if (seconds - emotionStartTime > emotionDuration) {
-        getNextEmotion();
-        emotionStartTime = seconds;
+    if (!emotionController.isTransitioning() && emotionController.getEmotionDuration(ms) > emotionDuration) {
+        emotionController.transitionTo(getNextEmotion(), emotionTransitionTime, ms);
     }
 
-    choreography();
+    // Update controllers
+    emotionController.update(ms, flower, leds, NUM_LEDS);
+    ledIndicator.update();
 
+    // Display new LED state
     FastLED.show();
 }

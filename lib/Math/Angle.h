@@ -7,7 +7,7 @@
  * Representation of an angle represented discrete integer.
  *
  * Value [0, 360) degrees with a minimum step of 1.40625 degrees
- * Value [0, 2pi) radians with a minimum step of 0.02454 radians
+ * Value [0, 2π) radians with a minimum step of 0.02454 radians
  */
 typedef uint8_t angle8;
 
@@ -15,7 +15,7 @@ typedef uint8_t angle8;
  * Representation of an angle represented discrete integer.
  *
  * Value [0, 360) degrees with a minimum step of 0.0054931608 degrees
- * Value [0, 2pi) radians with a minimum step of 0.0000958734 radians
+ * Value [0, 2π) radians with a minimum step of 0.0000958734 radians
  */
 typedef uint16_t angle16;
 

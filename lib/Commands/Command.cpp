@@ -17,14 +17,14 @@ void Command::close(Flower &flower) {
     flower.closeAsync();
 }
 
-void Command::openTo(Flower &flower, float percentage) {
-    flower.openToAsync((float) percentage);
+void Command::openTo(Flower &flower, fract16 percentage) {
+    flower.openToAsync(percentage);
 }
 
-void Command::speed(Flower &flower, int speed) {
-    flower.setMaxSpeed((float) speed);
+void Command::speed(Flower &flower, uint16_t speed) {
+    flower.setMaxSpeed(speed);
 }
 
-void Command::acceleration(Flower &flower, int acceleration) {
-    flower.setAcceleration((float) acceleration);
+void Command::acceleration(Flower &flower, uint16_t acceleration) {
+    flower.setAcceleration(acceleration);
 }

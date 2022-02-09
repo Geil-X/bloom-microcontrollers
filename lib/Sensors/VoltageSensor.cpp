@@ -1,6 +1,7 @@
 #include "VoltageSensor.h"
+
 #include <Arduino.h>
-#include "MathExtra.h"
+#include <MathExtra.h>
 
 #define ARDUINO_MAX_VOLTAGE 5.f  // Volts
 
@@ -10,8 +11,10 @@ VoltageSensor::VoltageSensor(uint8_t pin, int r1, int r2, float threshold_voltag
     this->max_voltage = ARDUINO_MAX_VOLTAGE * (float) ((float) (r1 + r2) / (float) r2);
 }
 
+
+
 float VoltageSensor::read() {
-    runningVoltage.add(map((float) analogRead(pin), 0., 1023., 0, max_voltage));
+    runningVoltage.add(mapf((float) analogRead(pin), 0., 1023., 0, max_voltage));
     return runningVoltage.getMedian();
 }
 
