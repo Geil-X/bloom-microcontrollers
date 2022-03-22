@@ -4,7 +4,7 @@
 #include <FastLED.h>
 #include <SerialTransfer.h>
 
-#include <I2CPacket.h>
+#include <CommandPacket.h>
 
 class I2CController {
 public:
@@ -21,7 +21,7 @@ public:
 private:
     void sendPacket();
 
-    I2CPacket packet;
+    CommandPacket packet;
     SerialTransfer serialTransfer;
 };
 

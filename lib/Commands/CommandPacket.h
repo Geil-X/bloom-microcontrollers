@@ -1,9 +1,9 @@
-#ifndef FLOWER_I2CPACKET_H
-#define FLOWER_I2CPACKET_H
+#ifndef FLOWER_COMMANDPACKET_H
+#define FLOWER_COMMANDPACKET_H
 
 #include <Command.h>
 
-struct I2CPacket {
+struct CommandPacket {
     Command::Id commandId;
     union {
         // "Open" & "Open To" Commands
@@ -15,6 +15,6 @@ struct I2CPacket {
         // Set Acceleration
         uint16_t acceleration;
     };
-};
+} commandPacket{};
 
-#endif //FLOWER_I2CPACKET_H
+#endif //FLOWER_COMMANDPACKET_H
