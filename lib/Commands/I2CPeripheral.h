@@ -8,11 +8,11 @@
 
 class I2CPeripheral {
 public:
-    explicit I2CPeripheral(SerialTransfer &transfer);
-    bool executeCommandFromWire(Flower &flower);
+    static void begin(uint8_t device_id);
+    static bool executeCommandFromWire(Flower &flower);
+    static void printCommandFromWire(int packetSize);
 private:
-    CommandPacket packet{};
-    SerialTransfer &serialTransfer;
+    static CommandPacket packet;
 };
 
 

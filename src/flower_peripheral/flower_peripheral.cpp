@@ -19,8 +19,7 @@ VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_R
 LedIndicator ledIndicator(IND_PIN);
 
 // Communication
-SerialTransfer i2cProtocol;
-I2CPeripheral peripheralCommunication(i2cProtocol);
+I2CPeripheral peripheralCommunication;
 
 ISR(TIMER1_COMPA_vect) {
     flower.run();
@@ -44,10 +43,9 @@ void setup() {
     Log::info("Booting up flower peripheral");
 
     // Initialize I2C Communication
-    uint8_t device_id = dip_switch.value() + 16;
+    uint8_t device_id = dip_switch.value();
     Log::info("Connecting to I2C on channel: " + String(device_id));
-    Wire.begin(device_id);
-    i2cProtocol.begin(Wire);
+    peripheralCommunication.begin(device_id);
 
     // Wait until the program receives 12v motor input voltage
     ledIndicator.blink(250, 250);
