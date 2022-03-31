@@ -1,17 +1,18 @@
 #include <Arduino.h>
 #include <I2CPeripheral.h>
+#include <MorningGlory.h>
+#include "Logging.h"
 
-struct Transmission {
-    __attribute__((unused)) uint8_t buttonId = 0;
-} transmission;
+Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
+I2CPeripheral i2CPeripheral;
 
 #define DEVICE_ID 8
 
 void setup() {
-    Serial.begin(115200);
-    Serial.println("Running I2C Peripheral Test");
+    Log::connect(Log::DEBUG);
+    Log::info("Running I2C Peripheral Test");
 
-    I2CPeripheral::begin(DEVICE_ID);
+    i2CPeripheral.begin(DEVICE_ID);
 }
 
 void loop() {

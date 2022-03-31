@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <SerialTransfer.h>
-#include <Wire.h>
 
 #include <I2CPeripheral.h>
 #include <DipSwitch.h>
@@ -21,9 +19,12 @@ LedIndicator ledIndicator(IND_PIN);
 // Communication
 I2CPeripheral peripheralCommunication;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-attributes"
 ISR(TIMER1_COMPA_vect) {
     flower.run();
 }
+#pragma clang diagnostic pop
 
 void setupFlower() {
     Log::info("Running setup sequence");
@@ -39,7 +40,7 @@ void setupFlower() {
 
 void setup() {
     // Setup serial communication
-    Log::connect();
+    Log::connect(Log::DEBUG);
     Log::info("Booting up flower peripheral");
 
     // Initialize I2C Communication
@@ -48,6 +49,7 @@ void setup() {
     peripheralCommunication.begin(device_id);
 
     // Wait until the program receives 12v motor input voltage
+    Log::info("Waiting for motor power");
     ledIndicator.blink(250, 250);
     while (!motorVoltage.hasPower()) {
         ledIndicator.update();
@@ -60,13 +62,12 @@ void setup() {
     setupFlower();
     ledIndicator.blinkBlocking(50, 50, 5);
 
-    ledIndicator.on();
+    ledIndicator.blink(2000, 100);
+    Log::info("Running main sequence waiting for commands");
 }
 
 __attribute__((unused)) void loop() {
-    if (peripheralCommunication.executeCommandFromWire(flower)) {
-        ledIndicator.blinkBlocking(1, 0, 1);
-    }
+    peripheralCommunication.executeCommand(flower);
 
     if (motorVoltage.lostPower()) {
         ledIndicator.blink(250, 250);
@@ -75,11 +76,13 @@ __attribute__((unused)) void loop() {
     if (motorVoltage.gainedPower()) {
         ledIndicator.blink(2000, 2000);
         setupFlower();
+        ledIndicator.blink(2000, 100);
     }
 
     if (flower.motorStalled()) {
         ledIndicator.blinkBlocking(50, 50, 20);
         flower.home();
+        ledIndicator.blink(2000, 100);
     }
 
     ledIndicator.update();

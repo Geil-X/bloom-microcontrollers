@@ -65,10 +65,6 @@ void I2CController::clearPacket() {
 
 void I2CController::sendPacket(uint8_t targetAddress) {
     Wire.beginTransmission(targetAddress);
-    for (unsigned char &i: packet.arr) {
-        Serial.print(String(i));
-    }
-    Serial.println();
     Wire.write(packet.arr, COMMAND_PACKET_SIZE);
     Wire.endTransmission();
 }

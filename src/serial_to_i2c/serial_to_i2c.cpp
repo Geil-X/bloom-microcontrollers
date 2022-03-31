@@ -2,6 +2,8 @@
 #include <CommandPacket.h>
 #include "I2CController.h"
 
+#define IND_PIN 14 // PC0
+
 #define CONTROLLER_PACKET_SIZE COMMAND_PACKET_SIZE + 1
 struct ControllerPacket {
     union {
@@ -20,14 +22,14 @@ I2CController i2cCommunication;
 
 void setup() {
     Serial.begin(115200);
-    while (!Serial) {}
+    pinMode(IND_PIN, OUTPUT);
+    digitalWrite(IND_PIN, LOW);
 }
 
 void loop() {
-}
-
-__attribute__((unused)) void serialEvent() {
-    if (!Serial.available()) return;
+    if (!Serial.available() || Serial.available() < CONTROLLER_PACKET_SIZE) return;
+    digitalWrite(IND_PIN, HIGH);
     Serial.readBytes(controllerPacket.arr, CONTROLLER_PACKET_SIZE);
     i2cCommunication.sendPacket(controllerPacket.commandPacket, controllerPacket.i2cAddress);
+    digitalWrite(IND_PIN, LOW);
 }

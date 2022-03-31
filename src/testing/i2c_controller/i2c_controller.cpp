@@ -11,9 +11,6 @@ void setup() {
 }
 
 void loop() {
-    i2cCommunication.sendHomePacket(DEVICE_ID);
-    delay(500);
-    i2cCommunication.sendSetupPacket(DEVICE_ID);
     delay(500);
     i2cCommunication.sendOpenPacket(DEVICE_ID);
     delay(500);

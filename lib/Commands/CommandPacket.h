@@ -15,6 +15,7 @@ struct CommandPacket {
 
                 // Set Speed
                 uint16_t speed;
+                int16_t sspeed;
 
                 // Set Acceleration
                 uint16_t acceleration;

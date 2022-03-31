@@ -1,103 +1,72 @@
 #include "I2CPeripheral.h"
+#include "Logging.h"
 
 #include <Wire.h>
-
 #include <Command.h>
 
-CommandPacket I2CPeripheral::packet{};
+I2CPeripheral *I2CPeripheral::peripheral = nullptr;
 
-void I2CPeripheral::begin(uint8_t deviceId) { // NOLINT(readability-convert-member-functions-to-static)
+
+void I2CPeripheral::begin(uint8_t deviceId) {
     Wire.begin(deviceId);
-    Wire.onReceive(printCommandFromWire);
+    peripheral = this;
+    Wire.onReceive(
+            [](int bytes) {
+                I2CPeripheral::peripheral->readCommandFromWire(bytes);
+            }
+    );
 }
 
-bool I2CPeripheral::executeCommandFromWire(Flower &flower) {
-    if (!Wire.available()) return false;
+void I2CPeripheral::readCommandFromWire(int bytes) {
+    if (bytes == 0 || !Wire.available()) return;
+    if (bytes < COMMAND_PACKET_SIZE) {
+        while (Wire.available()) { Wire.read(); }
+        return;
+    }
     Wire.readBytes(packet.arr, COMMAND_PACKET_SIZE);
+}
 
+
+void I2CPeripheral::executeCommand(Flower &flower) {
     switch (packet.commandId) {
         case Command::NO_COMMAND: {
-            return false;
+            return;
         }
         case Command::SETUP: {
+            Log::debug("Running setup sequence");
             Command::setup(flower);
             break;
         }
         case Command::HOME: {
+            Log::debug("Running home sequence");
             Command::home(flower);
             break;
         }
         case Command::OPEN: {
+            Log::debug("Opening flower");
             Command::open(flower);
             break;
         }
         case Command::CLOSE: {
+            Log::debug("Closing flower");
             Command::close(flower);
             break;
         }
         case Command::OPEN_TO: {
+            Log::debug("Opening flower to " + String(packet.percentage));
             Command::openTo(flower, packet.percentage);
             break;
         }
         case Command::SPEED: {
+            Log::debug("Setting flower speed to " + String(packet.speed));
             Command::speed(flower, packet.speed);
             break;
         }
         case Command::ACCELERATION: {
+            Log::debug("Setting flower acceleration to " + String(packet.acceleration));
             Command::acceleration(flower, packet.acceleration);
             break;
         }
-        default: {
-            return false;
-        }
     }
-    return true;
-}
-
-
-void I2CPeripheral::printCommandFromWire(int packetSize) {
-    if (packetSize == 0 || !Wire.available()) return;
-    if (packetSize > COMMAND_PACKET_SIZE) {
-        Serial.println("Expected a size of " + String(COMMAND_PACKET_SIZE) + " but got " + String(packetSize));
-    }
-    Wire.readBytes(packet.arr, COMMAND_PACKET_SIZE);
-
-    switch (packet.commandId) {
-        case Command::NO_COMMAND: {
-            Serial.println("No Command");
-            return;
-        }
-        case Command::SETUP: {
-            Serial.println("Setup");
-            return;
-        }
-        case Command::HOME: {
-            Serial.println("Home");
-            return;
-        }
-        case Command::OPEN: {
-            Serial.println("Open");
-            return;
-        }
-        case Command::CLOSE: {
-            Serial.println("Close");
-            return;
-        }
-        case Command::OPEN_TO: {
-            Serial.println("Open To: " + String(packet.percentage));
-            return;
-        }
-        case Command::SPEED: {
-            Serial.println("Speed: " + String(packet.speed));
-            return;
-        }
-        case Command::ACCELERATION: {
-            Serial.println("Acceleration: " + String(packet.acceleration));
-            return;
-        }
-        default: {
-            Serial.println("Unknown Command Id: " + String(packet.commandId));
-            return;
-        }
-    }
+    packet.commandId = Command::NO_COMMAND;
 }
