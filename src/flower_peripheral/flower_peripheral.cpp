@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include <I2CPeripheral.h>
+#include <I2cPeripheral.h>
 #include <DipSwitch.h>
 #include <Logging.h>
 #include <Interrupt.h>
@@ -17,7 +17,7 @@ VoltageSensor motorVoltage = VoltageSensor(VM_REF, VOLTAGE_RESISTOR_1, VOLTAGE_R
 LedIndicator ledIndicator(IND_PIN);
 
 // Communication
-I2CPeripheral peripheralCommunication;
+I2cPeripheral peripheralCommunication;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-attributes"
@@ -43,10 +43,10 @@ void setup() {
     Log::connect(Log::DEBUG);
     Log::info("Booting up flower peripheral");
 
-    // Initialize I2C Communication
+    // Initialize I2c Communication
     uint8_t device_id = dip_switch.value();
-    Log::info("Connecting to I2C on channel: " + String(device_id));
-    peripheralCommunication.begin(device_id);
+    Log::info("Connecting to I2c on channel: " + String(device_id));
+    peripheralCommunication.begin(device_id, &flower);
 
     // Wait until the program receives 12v motor input voltage
     Log::info("Waiting for motor power");
@@ -67,7 +67,7 @@ void setup() {
 }
 
 __attribute__((unused)) void loop() {
-    peripheralCommunication.executeCommand(flower);
+    peripheralCommunication.executeCommand();
 
     if (motorVoltage.lostPower()) {
         ledIndicator.blink(250, 250);

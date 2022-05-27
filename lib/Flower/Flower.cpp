@@ -2,7 +2,7 @@
 
 #include <FastLED.h>
 #include <MathExtra.h>
-#include "Logging.h"
+#include <Logging.h>
 
 using namespace TMC2130_n;
 
@@ -23,8 +23,8 @@ enum SPREAD_CYCLE {
 
 
 Flower::Flower(
-        uint8_t en, uint8_t dir, uint8_t step, uint8_t cs,
-        uint8_t mosi, uint8_t miso, uint8_t sck)
+        PinIndex en, PinIndex dir, PinIndex step, PinIndex cs,
+        PinIndex mosi, PinIndex miso, PinIndex sck)
         : driver(cs, R_SENSE, mosi, miso, sck),
           stepper(stepper.DRIVER, step, dir) {
 
@@ -180,7 +180,7 @@ void Flower::home() {
     setMaxSpeed(15000);
     setAcceleration(5000);
     setSpeed(5000);
-    setStallGuardThreshold(15);
+    setStallGuardThreshold(20);
     setStallDetectionThreshold(950);
 
     // Fully open the motor
@@ -205,27 +205,39 @@ void Flower::home() {
 
 // ---- Accessor Functions ----
 
-fract16 Flower::getPosition() {
+Position Flower::getPosition() {
 #if defined(OPEN_CLOCKWISE)
-    return map(stepper.currentPosition(), 0, max_steps, 0, UINT;
+    return map(stepper.currentPosition(), 0, max_steps, 0, UINT);
 #elif defined(OPEN_COUNTERCLOCKWISE)
     return map(max_steps - stepper.currentPosition(), 0, max_steps, 0, UINT16_MAX);
 #endif
 }
 
-int8_t Flower::getStallGuardThreshold() {
+Position Flower::getTarget() {
+#if defined(OPEN_CLOCKWISE)
+    return getPosition() + stepper.Dis;
+#elif defined(OPEN_COUNTERCLOCKWISE)
+    return getPosition() - stepper.distanceToGo();
+#endif
+}
+
+StallTuning Flower::getStallGuardThreshold() {
     return driver.sgt();
 }
 
-uint16_t Flower::getStallDetectionThreshold() const {
+StallLevel Flower::getStallDetectionThreshold() const {
     return stall_detection_threshold;
 }
 
-[[maybe_unused]] uint16_t Flower::getSpeed() {
+Speed Flower::getSpeed() {
     return (uint16_t) stepper.speed();
 }
 
-uint16_t Flower::getStallGuardResult() const {
+Acceleration Flower::getAcceleration() const {
+    return acceleration;
+}
+
+StallLevel Flower::getStallGuardResult() const {
     return stall_guard_result;
 }
 
@@ -259,7 +271,8 @@ void Flower::setSpeed(uint16_t speed) {
     stepper.setSpeed(speed);
 }
 
-void Flower::setAcceleration(uint16_t acceleration) {
+void Flower::setAcceleration(Acceleration newAcceleration) {
+    this->acceleration = newAcceleration;
     stepper.setAcceleration(acceleration);
 }
 
@@ -294,7 +307,7 @@ void Flower::open() {
     openTo(UINT16_MAX);
 }
 
-void Flower::close() {
+__attribute__((unused)) void Flower::close() {
     openTo(0);
 }
 
@@ -354,7 +367,7 @@ void Flower::moveToBlocking(uint16_t position) {
     stepper.runToNewPosition(position);
 }
 
-uint16_t Flower::moveUntilStall(Direction dir) {
+Steps Flower::moveUntilStall(Direction dir) {
     int steps = 0;
     setDirection(dir);
 
@@ -370,6 +383,50 @@ uint16_t Flower::moveUntilStall(Direction dir) {
 
 void Flower::reverse() {
     driver.shaft(!driver.shaft());
+}
+
+void Flower::executeCommand(CommandPacket command) {
+    switch (command.commandId) {
+        case Command::NO_COMMAND: {
+            return;
+        }
+        case Command::SETUP: {
+            Log::debug("Running setup sequence");
+            setup();
+            break;
+        }
+        case Command::HOME: {
+            Log::debug("Running home sequence");
+            home();
+            break;
+        }
+        case Command::OPEN: {
+            Log::debug("Opening flower");
+            openAsync();
+            break;
+        }
+        case Command::CLOSE: {
+            Log::debug("Closing flower");
+            closeAsync();
+            break;
+        }
+        case Command::OPEN_TO: {
+            Log::debug("Opening flower to " + String(command.percentage));
+            openTo(command.percentage);
+            break;
+        }
+        case Command::SPEED: {
+            Log::debug("Setting flower speed to " + String(command.speed));
+            setMaxSpeed(command.speed);
+            break;
+        }
+        case Command::ACCELERATION: {
+            Log::debug("Setting flower acceleration to " + String(command.acceleration));
+            setAcceleration(command.acceleration);
+            break;
+        }
+    }
+    command.commandId = Command::NO_COMMAND;
 }
 
 [[maybe_unused]] void Flower::stop() {

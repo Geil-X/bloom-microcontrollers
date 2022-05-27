@@ -27,7 +27,7 @@ SerialTransfer serialTransfer;
 // TMC2130 Parameters
 #define R_SENSE 0.11f  // Set for the silent step stick series
 
-// I2CController Libraries
+// I2cController Libraries
 TMC2130Stepper driver(CS_PIN, R_SENSE, SW_MOSI, SW_MISO, SW_SCK);
 AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 

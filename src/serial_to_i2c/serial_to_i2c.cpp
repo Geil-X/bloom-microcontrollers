@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <CommandPacket.h>
-#include "I2CController.h"
+#include "CommandPacket.h"
+#include "I2cController.h"
 
 #define IND_PIN 14 // PC0
 
@@ -18,7 +18,7 @@ struct ControllerPacket {
     };
 } controllerPacket;
 
-I2CController i2cCommunication;
+I2cController i2cCommunication;
 
 void setup() {
     Serial.begin(115200);

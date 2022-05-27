@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include <I2CController.h>
+#include <I2cController.h>
 #include <Choreography.h>
 #include <Logging.h>
 #include <LedIndicator.h>
@@ -15,7 +15,7 @@
 uint8_t devices[] = {7};
 unsigned long last_command;
 LedIndicator ledIndicator(IND_PIN);
-I2CController i2CController;
+I2cController i2CController;
 
 void setup() {
     Log::connect();

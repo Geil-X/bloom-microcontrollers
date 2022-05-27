@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <I2CPeripheral.h>
+#include <I2cPeripheral.h>
 #include <Logging.h>
 #include <DistanceSensor.h>
 #include <Choreography.h>

@@ -14,11 +14,11 @@
 // Emotional States
 Excited *excited = new Excited();
 Sleepy *sleepy = new Sleepy();
-Angry *scared = new Angry();
+Angry *angry = new Angry();
 Curious *curious = new Curious();
 
-uint32_t emotionDuration = 20 * 1000; // ms
-uint32_t emotionTransitionTime = 5 * 1000; // ms
+uint32_t emotionDuration = 10 * 1000; // ms
+uint32_t emotionTransitionTime = 2 * 1000; // ms
 EmotionController emotionController((IEmotionState *) excited);
 
 // Controllers and Sensors
@@ -77,7 +77,7 @@ IEmotionState* getNextEmotion() {
     switch (random8(4)) {
         case 0: return (IEmotionState *) excited;
         case 1: return (IEmotionState *) sleepy;
-        case 2: return (IEmotionState *) scared;
+        case 2: return (IEmotionState *) angry;
         case 3: return (IEmotionState *) curious;
         default: return (IEmotionState *) excited;
     }

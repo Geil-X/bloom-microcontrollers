@@ -20,7 +20,7 @@
 #define R_SENSE         0.11f    // Set for the silent step stick series
 #define STALL_VALUE     50       // [0..255]
 
-// I2CController Libraries
+// I2cController Libraries
 TMC2209Stepper driver(RX2, TX2, R_SENSE,DRIVER_ADDRESS);
 AccelStepper stepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 
