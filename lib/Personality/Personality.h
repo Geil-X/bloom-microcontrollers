@@ -14,13 +14,13 @@
 #include "Angle.h"
 #include "CircularGradient.h"
 
-enum Speed {
+enum SpeedDefault {
     SLOW_SPEED = 500,
     MEDIUM_SPEED = 1000,
     FAST_SPEED = 3000,
 };
 
-enum Acceleration {
+enum AccelerationDefault {
     SLOW_ACCELERATION = 500,
     MEDIUM_ACCELERATION = 1000,
     FAST_ACCELERATION = 3000,

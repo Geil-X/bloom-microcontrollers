@@ -229,7 +229,7 @@ StallLevel Flower::getStallDetectionThreshold() const {
     return stall_detection_threshold;
 }
 
-Speed Flower::getSpeed() {
+Acceleration Flower::getSpeed() {
     return (uint16_t) stepper.speed();
 }
 

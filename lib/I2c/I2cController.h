@@ -14,8 +14,8 @@ public:
     void sendOpenPacket(I2cAddress targetAddress);
     void sendClosePacket(I2cAddress targetAddress);
     void sendOpenToPacket(Percentage percentage, I2cAddress targetAddress);
-    void sendSpeedPacket(Speed speed, I2cAddress targetAddress);
-    void sendAccelerationPacket(Acceleration acceleration, I2cAddress targetAddress);
+    void sendSpeedPacket(SpeedDefault speed, I2cAddress targetAddress);
+    void sendAccelerationPacket(AccelerationDefault acceleration, I2cAddress targetAddress);
     void sendPacket(CommandPacket & commandPacket, I2cAddress targetAddress);
 
 private:
