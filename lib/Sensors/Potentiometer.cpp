@@ -1,4 +1,4 @@
-#include "Potentiometer.h"
+#include <Potentiometer.h>
 
 #define ANALOG_IN_MAX 1023
 

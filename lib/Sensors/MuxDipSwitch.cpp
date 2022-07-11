@@ -1,4 +1,4 @@
-#include "MuxDipSwitch.h"
+#include <MuxDipSwitch.h>
 
 MuxDipSwitch::MuxDipSwitch(uint8_t output, uint8_t select1, uint8_t select2, uint8_t select3) {
     this->output = output;

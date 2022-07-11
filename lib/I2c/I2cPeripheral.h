@@ -10,8 +10,10 @@ public:
     void begin(I2cAddress deviceId, Flower*newFlower);
     void executeCommand();
 private:
-    void readCommandFromWire(int bytes);
-    void sendResponseThroughWire();
+    // Functions are used within I2C ISR so they aren't used directly in code
+    __attribute__((unused)) void readCommandFromWire(int bytes);
+    __attribute__((unused)) void sendResponseThroughWire();
+
     CommandPacket commandPacket{};
     ResponsePacket responsePacket{};
     static I2cPeripheral *peripheral;

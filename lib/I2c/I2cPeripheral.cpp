@@ -1,26 +1,22 @@
-#include "I2cPeripheral.h"
-#include "Logging.h"
+#include <I2cPeripheral.h>
 
 #include <Wire.h>
-#include "Command.h"
+
+#include <Types.h>
 #include <Flower.h>
 
 I2cPeripheral *I2cPeripheral::peripheral = nullptr;
 
-void I2cPeripheral::begin(I2cAddress deviceId, Flower*newFlower) {
+void I2cPeripheral::begin(I2cAddress deviceId, Flower *newFlower) {
     flower = newFlower;
     Wire.begin(deviceId);
     peripheral = this;
-    Wire.onReceive(
-            [](int bytes) {
-                I2cPeripheral::peripheral->readCommandFromWire(bytes);
-            }
-    );
-    Wire.onRequest(
-            [] {
-                I2cPeripheral::peripheral->sendResponseThroughWire();
-            }
-            );
+    Wire.onReceive([](int bytes) {
+        I2cPeripheral::peripheral->readCommandFromWire(bytes);
+    });
+    Wire.onRequest([] {
+        I2cPeripheral::peripheral->sendResponseThroughWire();
+    });
 }
 
 void I2cPeripheral::readCommandFromWire(int bytes) {
@@ -31,63 +27,59 @@ void I2cPeripheral::readCommandFromWire(int bytes) {
     }
     Wire.readBytes(commandPacket.arr, COMMAND_PACKET_SIZE);
     if (flower != nullptr) {
-        flower->executeCommand()
+        flower->executeCommand(commandPacket);
     }
 }
 
 void I2cPeripheral::sendResponseThroughWire() {
-    if (flower != nullptr) {
-        responsePacket.time = millis();
-        responsePacket.position = flower->getPosition();
-        responsePacket.target = flower->getTarget();
-        responsePacket.acceleration = flower->getAcceleration();
-        responsePacket.speed = flower->getSpeed();
+    if (flower == nullptr) return;
 
-        Wire.write(responsePacket.arr, RESPONSE_PACKET_SIZE);
-    }
+    responsePacket.time = millis();
+    responsePacket.position = flower->getPosition();
+    responsePacket.target = flower->getTarget();
+    responsePacket.acceleration = flower->getAcceleration();
+    responsePacket.speed = flower->getSpeed();
+
+    Wire.write(responsePacket.arr, RESPONSE_PACKET_SIZE);
 }
 
-
 void I2cPeripheral::executeCommand() {
+    if (flower == nullptr) return;
+
     switch (commandPacket.commandId) {
         case Command::NO_COMMAND: {
             return;
         }
         case Command::SETUP: {
-            Log::debug("Running setup sequence");
-//            Command::setup(flower);
+            flower->setup();
             break;
         }
         case Command::HOME: {
-            Log::debug("Running home sequence");
-//            Command::home(flower);
+            flower->home();
             break;
         }
         case Command::OPEN: {
-            Log::debug("Opening flower");
-//            Command::open(flower);
+            flower->openAsync();
             break;
         }
         case Command::CLOSE: {
-            Log::debug("Closing flower");
-//            Command::close(flower);
+            flower->closeAsync();
             break;
         }
         case Command::OPEN_TO: {
-            Log::debug("Opening flower to " + String(commandPacket.percentage));
-//            Command::openTo(flower, packet.percentage);
+            flower->openToAsync(commandPacket.percentage);
             break;
         }
         case Command::SPEED: {
-            Log::debug("Setting flower speed to " + String(commandPacket.speed));
-//            Command::speed(flower, packet.speed);
+            flower->setSpeed(commandPacket.speed);
             break;
         }
         case Command::ACCELERATION: {
-            Log::debug("Setting flower acceleration to " + String(commandPacket.acceleration));
-//            Command::acceleration(flower, packet.acceleration);
+            flower->setAcceleration(commandPacket.acceleration);
             break;
         }
     }
+
+    // Clear the command packet so the command is only run once
     commandPacket.commandId = Command::NO_COMMAND;
 }

@@ -25,8 +25,10 @@ void I2cController::sendHomePacket(uint8_t targetAddress) {
 }
 
 void I2cController::sendOpenPacket(uint8_t targetAddress) {
+    Log::debug("Clearing Packet");
     clearPacket();
     packet.commandId = Command::OPEN;
+    Log::debug("Sending Open Packet");
     sendPacket(targetAddress);
     Log::debug("Sent Open Packet");
 }
@@ -73,8 +75,31 @@ void I2cController::clearPacket() {
     }
 }
 
+void I2cController::scan(uint8_t maxAddress) {
+    Log::debug("Clearing stored i2c addresses");
+    connectedI2cAddresses.clear();
+    for (byte i2cAddress = 8; i2cAddress < maxAddress; i2cAddress++)
+    {
+        Wire.beginTransmission (i2cAddress);
+        if (Wire.endTransmission () == 0)
+        {
+            connectedI2cAddresses.add(i2cAddress);
+            Log::debug("Found I2C address: " + String(i2cAddress));
+        }
+    }
+}
+
 void I2cController::sendPacket(uint8_t targetAddress) {
-    Wire.beginTransmission(targetAddress);
-    Wire.write(packet.arr, COMMAND_PACKET_SIZE);
-    Wire.endTransmission();
+    if (connectedI2cAddresses.has(targetAddress)) {
+        Log::debug("Start");
+        Wire.beginTransmission(targetAddress);
+        Log::debug("Write array");
+        Wire.write(packet.arr, COMMAND_PACKET_SIZE);
+        Log::debug("End Transmission");
+        Wire.endTransmission();
+        Log::debug("Done");
+    }
+    else {
+        Log::error("Can't send message because I2C device is not connected: " + String(targetAddress));
+    }
 }

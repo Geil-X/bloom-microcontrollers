@@ -1,4 +1,4 @@
-#include "StallDetectionTuning.h"
+#include <StallDetectionTuning.h>
 
 const int STALL_TABLE[NUM_STALL_VALUES][3] = {
 // Speed | Stall Guard Threshold | Maximum Stall Detection Threshold

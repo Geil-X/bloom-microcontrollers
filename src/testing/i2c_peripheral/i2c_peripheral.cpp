@@ -1,20 +1,62 @@
 #include <Arduino.h>
-#include <I2cPeripheral.h>
-#include <MorningGlory.h>
-#include "Logging.h"
+#include <Wire.h>
 
-Flower flower = Flower(EN, DIR, STEP, SS, SDI, SDO, SCK);
-I2cPeripheral i2cPeripheral;
+const byte MY_ADDRESS = 17;
 
-#define DEVICE_ID 8
+// various commands we might get
+
+enum {
+    CMD_ID = 1,
+    CMD_READ_A0 = 2,
+    CMD_READ_D8 = 3
+};
+
+char command;
+
+void sendSensor(const byte which) {
+    int val = analogRead(which);
+    byte buf[2];
+
+    buf[0] = val >> 8;
+    buf[1] = val & 0xFF;
+    Wire.write(buf, 2);
+}  // end of sendSensor
+
+void receiveEvent(int howMany) {
+    command = (char) Wire.read();  // remember command for when we get request
+} // end of receiveEvent
+
+void requestEvent() {
+    switch (command) {
+        case CMD_ID:
+            Wire.write(0x55);
+            break;   // send our ID
+        case CMD_READ_A0:
+            sendSensor(A0);
+            break;  // send A0 value
+        case CMD_READ_D8:
+            Wire.write(digitalRead(8));
+            break;   // send D8 value
+        default:
+            break;
+    }  // end of switch
+
+}  // end of requestEvent
 
 void setup() {
-    Log::connect(Log::DEBUG);
-    Log::info("Running I2c Peripheral Test");
+    command = 0;
 
-    i2cPeripheral.begin(DEVICE_ID);
-}
+    pinMode(8, INPUT);
+    digitalWrite(8, HIGH);  // enable pull-up
+    pinMode(A0, INPUT);
+    digitalWrite(A0, LOW);  // disable pull-up
+
+    Wire.begin(MY_ADDRESS);
+    Wire.onReceive(receiveEvent);  // interrupt handler for incoming messages
+    Wire.onRequest(requestEvent);  // interrupt handler for when data is wanted
+}  // end of setup
+
 
 void loop() {
-    i2cPeripheral.executeCommand(flower);
-}
+    // all done by interrupts
+}  // end of loop

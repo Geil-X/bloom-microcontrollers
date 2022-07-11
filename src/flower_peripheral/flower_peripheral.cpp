@@ -6,6 +6,7 @@
 #include <Interrupt.h>
 #include <LedIndicator.h>
 #include <MorningGlory.h>
+#include <VoltageSensor.h>
 
 
 // Peripheral Devices
@@ -19,12 +20,11 @@ LedIndicator ledIndicator(IND_PIN);
 // Communication
 I2cPeripheral peripheralCommunication;
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-attributes"
+
+// TODO: Move to be inside the flower class
 ISR(TIMER1_COMPA_vect) {
     flower.run();
 }
-#pragma clang diagnostic pop
 
 void setupFlower() {
     Log::info("Running setup sequence");
@@ -66,7 +66,7 @@ void setup() {
     Log::info("Running main sequence waiting for commands");
 }
 
-__attribute__((unused)) void loop() {
+void loop() {
     peripheralCommunication.executeCommand();
 
     if (motorVoltage.lostPower()) {

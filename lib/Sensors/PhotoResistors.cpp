@@ -1,4 +1,4 @@
-#include "PhotoResistor.h"
+#include <PhotoResistor.h>
 
 PhotoResistor::PhotoResistor(uint8_t pin) {
     this->pin = pin;

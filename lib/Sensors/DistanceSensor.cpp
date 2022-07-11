@@ -1,5 +1,7 @@
-#include "DistanceSensor.h"
+#include <DistanceSensor.h>
+
 #include <Arduino.h>
+
 
 // Constants for the speed of sound
 #define MICROSECONDS_PER_INCH 74.0524781f

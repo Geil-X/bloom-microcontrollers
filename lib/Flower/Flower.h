@@ -3,11 +3,10 @@
 
 #include <AccelStepper.h>
 #include <TMCStepper.h>
-#include <VoltageSensor.h>
-#include <StallDetectionTuning.h>
 #include <FastLED.h>
-#include <Types.h>
 
+#include <Types.h>
+#include <StallDetectionTuning.h>
 
 class Flower {
 public:
