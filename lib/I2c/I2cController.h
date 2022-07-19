@@ -18,6 +18,7 @@ public:
      */
     void scan(uint8_t maxAddress=127);
 
+    // Sending Data
     void sendSetupPacket(I2cAddress targetAddress);
     void sendHomePacket(I2cAddress targetAddress);
     void sendOpenPacket(I2cAddress targetAddress);
@@ -27,11 +28,15 @@ public:
     void sendAccelerationPacket(Acceleration acceleration, I2cAddress targetAddress);
     void sendPacket(CommandPacket & commandPacket, I2cAddress targetAddress);
 
+    // Requesting Data
+    ResponsePacket& request(uint8_t targetAddress);
+
 private:
     void clearPacket();
     void sendPacket(uint8_t targetAddress);
 
-    CommandPacket packet{};
+    CommandPacket commandPacket{};
+    ResponsePacket responsePacket{};
     Set connectedI2cAddresses;
 };
 

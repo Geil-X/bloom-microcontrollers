@@ -20,5 +20,4 @@ private:
     Flower *flower = nullptr;
 };
 
-
 #endif //FLOWER_I2CPERIPHERAL_H

@@ -58,8 +58,6 @@ public:
 
 // ---- Modifier Functions ----------------------------------------------------
 
-    void executeCommand(CommandPacket command);
-
     /**
      * Set the max speed of the device.
      * @param speed Maximum speed of the stepper motor is steps per second

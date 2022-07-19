@@ -1,47 +1,51 @@
 #include <Arduino.h>
 
-
 #include <Types.h>
 #include <Flower.h>
 #include <I2cController.h>
 #include <Logging.h>
-
-#define SERIAL_PACKET_SIZE (COMMAND_PACKET_SIZE + 1)
-struct SerialPacket {
-    union {
-        struct {
-            I2cAddress i2cAddress;
-            CommandPacket commandPacket;
-        };
-        uint8_t arr[SERIAL_PACKET_SIZE];
-    };
-} serialPacket;
+#include <MathExtra.h>
 
 I2cController controller;
-
+ResponsePacket responsePacket;
 
 void setup() {
     Log::connect(Log::DEBUG);
     Log::debug("Starting Serial TTL to I2C Converter");
-    controller.scan();
+}
+
+void printResponsePacket() {
+    Serial.println(responsePacket.time);
+    Serial.println(responsePacket.position);
+    Serial.println(responsePacket.target);
+    Serial.println(responsePacket.acceleration);
+    Serial.println(responsePacket.speed);
+    Serial.println();
 }
 
 void loop() {
-    delay(2000);
     controller.scan();
-    delay(2000);
-    controller.sendOpenPacket(17);
-    delay(2000);
-    controller.sendClosePacket(17);
-}
+    Percentage percentage = randomPercentage();
 
-/**
- * On receiving a serial communication, send the packet through the i2c address
- * over the i2c bus.
- */
-void serialEvent() {
-    while (Serial.available()) {
-        Serial.readBytes(serialPacket.arr, SERIAL_PACKET_SIZE);
-        controller.sendPacket(serialPacket.commandPacket, serialPacket.i2cAddress);
-    }
+    controller.sendOpenToPacket(percentage, 17);
+    delay(250);
+    responsePacket = controller.request(17);
+    printResponsePacket();
+
+    controller.sendOpenToPacket(percentage, 18);
+    delay(250);
+    responsePacket = controller.request(18);
+    printResponsePacket();
+
+    controller.sendOpenToPacket(percentage, 19);
+    delay(250);
+    responsePacket = controller.request(19);
+    printResponsePacket();
+
+    controller.sendOpenToPacket(percentage, 20);
+    delay(250);
+    responsePacket = controller.request(20);
+    printResponsePacket();
+
+    delay(3000);
 }

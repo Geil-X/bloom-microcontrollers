@@ -8,8 +8,8 @@
 // Toggle between the two modes of operation
 // If both are enabled, OPEN_CLOCKWISE wins
 //
-// #define OPEN_CLOCKWISE
-#define OPEN_COUNTERCLOCKWISE
+#define OPEN_CLOCKWISE
+//#define OPEN_COUNTERCLOCKWISE
 
 typedef uint32_t Time;
 typedef fract16 Position;
@@ -48,6 +48,7 @@ namespace Command {
         OPEN_TO,
         SPEED,
         ACCELERATION,
+        PING = UINT8_MAX,
     };
 }
 
@@ -72,6 +73,17 @@ struct CommandPacket {
     };
 };
 
+#define SERIAL_PACKET_SIZE (COMMAND_PACKET_SIZE + 1)
+struct SerialCommandPacket {
+    union {
+        struct {
+            I2cAddress i2cAddress;
+            CommandPacket commandPacket;
+        };
+        uint8_t arr[SERIAL_PACKET_SIZE];
+    };
+};
+
 #define RESPONSE_PACKET_SIZE 12
 
 struct ResponsePacket {
@@ -84,6 +96,17 @@ struct ResponsePacket {
             Speed speed;
         };
         uint8_t arr[RESPONSE_PACKET_SIZE];
+    };
+};
+
+#define SERIAL_RESPONSE_PACKET_SIZE (RESPONSE_PACKET_SIZE + 1)
+struct SerialResponsePacket {
+    union {
+        struct {
+            I2cAddress i2cAddress;
+            ResponsePacket responsePacket;
+        };
+        uint8_t arr[SERIAL_RESPONSE_PACKET_SIZE];
     };
 };
 

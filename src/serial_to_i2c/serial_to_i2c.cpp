@@ -1,35 +1,41 @@
 #include <Arduino.h>
-#include "CommandPacket.h"
-#include "I2cController.h"
 
-#define IND_PIN 14 // PC0
+#include <Types.h>
+#include <Flower.h>
+#include <I2cController.h>
+#include <Logging.h>
 
-#define CONTROLLER_PACKET_SIZE COMMAND_PACKET_SIZE + 1
-struct ControllerPacket {
-    union {
-        // Parameter access
-        struct {
-            uint8_t i2cAddress;
-            CommandPacket commandPacket;
-        };
 
-        // Byte array access. This length needs to be updates as fields are added
-        uint8_t arr[CONTROLLER_PACKET_SIZE];
-    };
-} controllerPacket;
-
-I2cController i2cCommunication;
+SerialCommandPacket serialCommandPacket;
+SerialResponsePacket serialResponsePacket;
+I2cController controller;
 
 void setup() {
-    Serial.begin(115200);
-    pinMode(IND_PIN, OUTPUT);
-    digitalWrite(IND_PIN, LOW);
+    Log::connect(Log::PRINT);
+    Log::debug("Starting Serial TTL to I2C Converter");
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+
 }
 
 void loop() {
-    if (!Serial.available() || Serial.available() < CONTROLLER_PACKET_SIZE) return;
-    digitalWrite(IND_PIN, HIGH);
-    Serial.readBytes(controllerPacket.arr, CONTROLLER_PACKET_SIZE);
-    i2cCommunication.sendPacket(controllerPacket.commandPacket, controllerPacket.i2cAddress);
-    digitalWrite(IND_PIN, LOW);
+}
+
+/**
+ * On receiving a serial communication, send the packet through the i2c address
+ * over the i2c bus.
+ */
+void serialEvent() {
+    while (Serial.available()) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        Serial.readBytes(serialCommandPacket.arr, SERIAL_PACKET_SIZE);
+        if (serialCommandPacket.commandPacket.commandId == Command::PING) {
+            serialResponsePacket.responsePacket = controller.request(serialCommandPacket.i2cAddress);
+            serialResponsePacket.i2cAddress = serialCommandPacket.i2cAddress;
+            Serial.write(serialResponsePacket.arr, SERIAL_RESPONSE_PACKET_SIZE);
+        } else {
+            controller.sendPacket(serialCommandPacket.commandPacket, serialCommandPacket.i2cAddress);
+            digitalWrite(LED_BUILTIN, LOW);
+        }
+    }
 }

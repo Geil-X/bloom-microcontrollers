@@ -4,6 +4,7 @@
 
 #include <Types.h>
 #include <Flower.h>
+#include <Logging.h>
 
 I2cPeripheral *I2cPeripheral::peripheral = nullptr;
 
@@ -11,6 +12,7 @@ void I2cPeripheral::begin(I2cAddress deviceId, Flower *newFlower) {
     flower = newFlower;
     Wire.begin(deviceId);
     peripheral = this;
+    commandPacket.commandId = Command::NO_COMMAND;
     Wire.onReceive([](int bytes) {
         I2cPeripheral::peripheral->readCommandFromWire(bytes);
     });
@@ -26,14 +28,10 @@ void I2cPeripheral::readCommandFromWire(int bytes) {
         return;
     }
     Wire.readBytes(commandPacket.arr, COMMAND_PACKET_SIZE);
-    if (flower != nullptr) {
-        flower->executeCommand(commandPacket);
-    }
 }
 
 void I2cPeripheral::sendResponseThroughWire() {
     if (flower == nullptr) return;
-
     responsePacket.time = millis();
     responsePacket.position = flower->getPosition();
     responsePacket.target = flower->getTarget();
@@ -48,38 +46,52 @@ void I2cPeripheral::executeCommand() {
 
     switch (commandPacket.commandId) {
         case Command::NO_COMMAND: {
+            Log::debug("No commandPacket");
             return;
         }
+        case Command::PING: {
+            break;
+        }
         case Command::SETUP: {
+            Log::debug("Running setup sequence");
             flower->setup();
             break;
         }
         case Command::HOME: {
-            flower->home();
+            Log::debug("Running home sequence");
+            Log::debug("But isn't because it's disabled");
+            // TODO: this is hanging up even when not hit in switch?
+            // this could be caused by the fact that the home function is
+            // synchronous
+//            flower->home();
             break;
         }
         case Command::OPEN: {
+            Log::debug("Opening flower");
             flower->openAsync();
             break;
         }
         case Command::CLOSE: {
+            Log::debug("Closing flower");
             flower->closeAsync();
             break;
         }
         case Command::OPEN_TO: {
+            Log::debug("Opening flower to " + String(commandPacket.percentage));
             flower->openToAsync(commandPacket.percentage);
             break;
         }
         case Command::SPEED: {
-            flower->setSpeed(commandPacket.speed);
+            Log::debug("Setting flower speed to " + String(commandPacket.speed));
+            flower->setMaxSpeed(commandPacket.speed);
             break;
         }
         case Command::ACCELERATION: {
+            Log::debug("Setting flower acceleration to " + String(commandPacket.acceleration));
             flower->setAcceleration(commandPacket.acceleration);
             break;
         }
     }
 
-    // Clear the command packet so the command is only run once
     commandPacket.commandId = Command::NO_COMMAND;
 }

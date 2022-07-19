@@ -207,7 +207,7 @@ void Flower::home() {
 
 Position Flower::getPosition() {
 #if defined(OPEN_CLOCKWISE)
-    return map(stepper.currentPosition(), 0, max_steps, 0, UINT);
+    return map(stepper.currentPosition(), 0, max_steps, 0, UINT16_MAX);
 #elif defined(OPEN_COUNTERCLOCKWISE)
     return map(max_steps - stepper.currentPosition(), 0, max_steps, 0, UINT16_MAX);
 #endif
@@ -215,7 +215,7 @@ Position Flower::getPosition() {
 
 Position Flower::getTarget() {
 #if defined(OPEN_CLOCKWISE)
-    return getPosition() + stepper.Dis;
+    return getPosition() + stepper.distanceToGo();
 #elif defined(OPEN_COUNTERCLOCKWISE)
     return getPosition() - stepper.distanceToGo();
 #endif
@@ -314,7 +314,7 @@ __attribute__((unused)) void Flower::close() {
 void Flower::openTo(fract16 percentage) {
     uint16_t target;
 #if defined(OPEN_CLOCKWISE)
-    target = map16(percentage, 0, max_steps)
+    target = map16(percentage, 0, max_steps);
 #elif defined(OPEN_COUNTERCLOCKWISE)
     target = max_steps - map16(percentage, 0, max_steps);
 #endif
@@ -333,7 +333,7 @@ void Flower::openToAsync(fract16 percentage) {
     uint16_t target;
     setDirection(DIRECTION_CLOCKWISE);
 #if defined(OPEN_CLOCKWISE)
-    target = map16(percentage, 0, max_steps)
+    target = map16(percentage, 0, max_steps);
 #elif defined(OPEN_COUNTERCLOCKWISE)
     target = max_steps - map16(percentage, 0, max_steps);
 #endif
@@ -383,50 +383,6 @@ Steps Flower::moveUntilStall(Direction dir) {
 
 void Flower::reverse() {
     driver.shaft(!driver.shaft());
-}
-
-void Flower::executeCommand(CommandPacket command) {
-    switch (command.commandId) {
-        case Command::NO_COMMAND: {
-            return;
-        }
-        case Command::SETUP: {
-            Log::debug("Running setup sequence");
-            setup();
-            break;
-        }
-        case Command::HOME: {
-            Log::debug("Running home sequence");
-            home();
-            break;
-        }
-        case Command::OPEN: {
-            Log::debug("Opening flower");
-            openAsync();
-            break;
-        }
-        case Command::CLOSE: {
-            Log::debug("Closing flower");
-            closeAsync();
-            break;
-        }
-        case Command::OPEN_TO: {
-            Log::debug("Opening flower to " + String(command.percentage));
-            openTo(command.percentage);
-            break;
-        }
-        case Command::SPEED: {
-            Log::debug("Setting flower speed to " + String(command.speed));
-            setMaxSpeed(command.speed);
-            break;
-        }
-        case Command::ACCELERATION: {
-            Log::debug("Setting flower acceleration to " + String(command.acceleration));
-            setAcceleration(command.acceleration);
-            break;
-        }
-    }
-    command.commandId = Command::NO_COMMAND;
 }
 
 [[maybe_unused]] void Flower::stop() {

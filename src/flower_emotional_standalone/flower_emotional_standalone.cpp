@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include <FastLED.h>
 
 #include <Logging.h>
@@ -9,6 +8,7 @@
 #include <Personality.h>
 #include <EmotionController.h>
 #include <LedIndicator.h>
+#include <VoltageSensor.h>
 
 
 // Emotional States

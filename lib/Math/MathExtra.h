@@ -3,6 +3,8 @@
 
 #include <FastLED.h>
 
+#include <Types.h>
+
 /**
  * map16: map from one full-range 16-bit value into a narrower range of 16-bit values, possibly a range of hues.
  * E.g. map myValue into a hue in the range blue..purple..pink..red hue = map16( myValue, HUE_BLUE, HUE_RED);
@@ -39,6 +41,10 @@ static inline float mapf(float x, float in_min, float in_max, float out_min, flo
  */
 static inline fract8 fract16ToFract8(fract16 f) {
     return (fract8) (f >> 8);
+}
+
+static inline Percentage randomPercentage() {
+    return random16();
 }
 
 

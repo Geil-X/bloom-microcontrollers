@@ -1,12 +1,13 @@
 #include <Arduino.h>
 
-#include <I2cPeripheral.h>
 #include <DipSwitch.h>
 #include <Logging.h>
+#include <Flower.h>
+#include <MorningGlory.h>
 #include <Interrupt.h>
 #include <LedIndicator.h>
-#include <MorningGlory.h>
 #include <VoltageSensor.h>
+#include <I2cPeripheral.h>
 
 
 // Peripheral Devices
@@ -27,9 +28,10 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 void setupFlower() {
-    Log::info("Running setup sequence");
+    Log::info("Running initial setup sequence");
     flower.setup();
-    Log::info("Running home sequence");
+
+    Log::info("Running initial home sequence");
     flower.home();
     flower.setMaxSpeed(10000);
     flower.setAcceleration(5000);
@@ -67,23 +69,26 @@ void setup() {
 }
 
 void loop() {
-    peripheralCommunication.executeCommand();
 
     if (motorVoltage.lostPower()) {
+        Log::info("Motor lost power");
         ledIndicator.blink(250, 250);
     }
 
     if (motorVoltage.gainedPower()) {
-        ledIndicator.blink(2000, 2000);
-        setupFlower();
+        Log::info("Motor regained power");
+        ledIndicator.blinkBlocking(50, 50, 5);
+        flower.home();
         ledIndicator.blink(2000, 100);
     }
 
     if (flower.motorStalled()) {
+        Log::info("Motor stalled");
         ledIndicator.blinkBlocking(50, 50, 20);
         flower.home();
         ledIndicator.blink(2000, 100);
     }
 
+    peripheralCommunication.executeCommand();
     ledIndicator.update();
 }
