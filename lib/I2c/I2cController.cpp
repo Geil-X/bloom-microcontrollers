@@ -98,3 +98,7 @@ ResponsePacket &I2cController::request(uint8_t targetAddress) {
     Wire.readBytes(responsePacket.arr, RESPONSE_PACKET_SIZE);
     return responsePacket;
 }
+
+Set &I2cController::connectedAddresses() {
+    return connectedI2cAddresses;
+}

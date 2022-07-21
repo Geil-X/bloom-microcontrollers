@@ -33,12 +33,10 @@ public:
 
 // ---- Accessor Functions -----------------------------------------------------
 
-    /**
-     * @return The fractional position of the flower between 0 and 1
-     */
     [[nodiscard]] Position getPosition();
     [[nodiscard]] Position getTarget();
     [[nodiscard]] Speed getSpeed();
+    [[nodiscard]] Speed getMaxSpeed();
     [[nodiscard]] Acceleration getAcceleration() const;
     [[nodiscard]] StallTuning getStallGuardThreshold();
     [[nodiscard]] StallLevel getStallDetectionThreshold() const;

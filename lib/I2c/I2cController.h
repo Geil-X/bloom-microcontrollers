@@ -16,7 +16,7 @@ public:
      * connected. These I2C addresses are registered to this controller
      * to ensure that the I2C communications remain stable.
      */
-    void scan(uint8_t maxAddress=127);
+    void scan(uint8_t maxAddress = 127);
 
     // Sending Data
     void sendSetupPacket(I2cAddress targetAddress);
@@ -26,10 +26,13 @@ public:
     void sendOpenToPacket(Percentage percentage, I2cAddress targetAddress);
     void sendSpeedPacket(Speed speed, I2cAddress targetAddress);
     void sendAccelerationPacket(Acceleration acceleration, I2cAddress targetAddress);
-    void sendPacket(CommandPacket & commandPacket, I2cAddress targetAddress);
+    void sendPacket(CommandPacket &commandPacket, I2cAddress targetAddress);
 
     // Requesting Data
-    ResponsePacket& request(uint8_t targetAddress);
+    ResponsePacket &request(uint8_t targetAddress);
+
+    //
+    Set &connectedAddresses();
 
 private:
     void clearPacket();

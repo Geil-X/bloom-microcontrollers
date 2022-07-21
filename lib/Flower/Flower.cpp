@@ -233,6 +233,10 @@ Acceleration Flower::getSpeed() {
     return (uint16_t) stepper.speed();
 }
 
+Acceleration Flower::getMaxSpeed() {
+    return (uint16_t) stepper.maxSpeed();
+}
+
 Acceleration Flower::getAcceleration() const {
     return acceleration;
 }

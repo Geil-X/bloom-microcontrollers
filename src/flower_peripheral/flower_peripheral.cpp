@@ -77,16 +77,16 @@ void loop() {
 
     if (motorVoltage.gainedPower()) {
         Log::info("Motor regained power");
-        ledIndicator.blinkBlocking(50, 50, 5);
-        flower.home();
+//        ledIndicator.blinkBlocking(50, 50, 5);
+//        flower.home();
         ledIndicator.blink(2000, 100);
     }
 
     if (flower.motorStalled()) {
         Log::info("Motor stalled");
-        ledIndicator.blinkBlocking(50, 50, 20);
-        flower.home();
-        ledIndicator.blink(2000, 100);
+//        ledIndicator.blinkBlocking(50, 50, 20);
+//        flower.home();
+//        ledIndicator.blink(2000, 100);
     }
 
     peripheralCommunication.executeCommand();

@@ -5,47 +5,27 @@
 #include <I2cController.h>
 #include <Logging.h>
 #include <MathExtra.h>
+#include <Set.h>
 
 I2cController controller;
-ResponsePacket responsePacket;
+Set i2cAddresses;
+int i2cAddress = -1;
+unsigned int delayTime = 150;
 
 void setup() {
     Log::connect(Log::DEBUG);
-    Log::debug("Starting Serial TTL to I2C Converter");
-}
-
-void printResponsePacket() {
-    Serial.println(responsePacket.time);
-    Serial.println(responsePacket.position);
-    Serial.println(responsePacket.target);
-    Serial.println(responsePacket.acceleration);
-    Serial.println(responsePacket.speed);
-    Serial.println();
 }
 
 void loop() {
     controller.scan();
+    i2cAddresses = controller.connectedAddresses();
     Percentage percentage = randomPercentage();
+    delayTime = 1000 / i2cAddresses.count();
 
-    controller.sendOpenToPacket(percentage, 17);
-    delay(250);
-    responsePacket = controller.request(17);
-    printResponsePacket();
-
-    controller.sendOpenToPacket(percentage, 18);
-    delay(250);
-    responsePacket = controller.request(18);
-    printResponsePacket();
-
-    controller.sendOpenToPacket(percentage, 19);
-    delay(250);
-    responsePacket = controller.request(19);
-    printResponsePacket();
-
-    controller.sendOpenToPacket(percentage, 20);
-    delay(250);
-    responsePacket = controller.request(20);
-    printResponsePacket();
-
-    delay(3000);
+    i2cAddress = i2cAddresses.first();
+    while (i2cAddress != -1) {
+        controller.sendOpenToPacket(percentage, i2cAddress);
+        delay(delayTime);
+        i2cAddress = i2cAddresses.next();
+    }
 }
