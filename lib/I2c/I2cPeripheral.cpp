@@ -46,7 +46,6 @@ void I2cPeripheral::executeCommand() {
 
     switch (commandPacket.commandId) {
         case Command::NO_COMMAND: {
-            Log::debug("No commandPacket");
             return;
         }
         case Command::PING: {

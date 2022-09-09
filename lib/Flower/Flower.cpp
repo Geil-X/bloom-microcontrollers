@@ -152,10 +152,10 @@ void Flower::setupDriver() {
     driver.sedn(0b01);
 
     // This signed value controls stallGuard2 level for stall output and sets the optimum
-    // measurement range for readout. A lower value gives a higher sensitivity. Zero is the
-    // starting value working with most motors.
+    // measurement range for readout. A lower value gives a higher sensitivity and will
+    // give more stall detections while a lower value will be less likely to give a
+    // stall detection.
     // Stall guard threshold range -64 to +63:
-    // A higher value makes stallGuard2
     driver.sgt(30);
 }
 
@@ -180,7 +180,7 @@ void Flower::home() {
     setMaxSpeed(15000);
     setAcceleration(5000);
     setSpeed(5000);
-    setStallGuardThreshold(20);
+    setStallGuardThreshold(40);
     setStallDetectionThreshold(950);
 
     // Fully open the motor

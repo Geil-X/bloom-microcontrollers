@@ -45,10 +45,6 @@ void setup() {
     Log::connect(Log::DEBUG);
     Log::info("Booting up flower peripheral");
 
-    // Initialize I2c Communication
-    uint8_t device_id = dip_switch.value();
-    Log::info("Connecting to I2c on channel: " + String(device_id));
-    peripheralCommunication.begin(device_id, &flower);
 
     // Wait until the program receives 12v motor input voltage
     Log::info("Waiting for motor power");
@@ -63,6 +59,11 @@ void setup() {
     ledIndicator.on();
     setupFlower();
     ledIndicator.blinkBlocking(50, 50, 5);
+
+    // Initialize I2c Communication
+    uint8_t device_id = dip_switch.value();
+    Log::info("Connecting to I2c on channel: " + String(device_id));
+    peripheralCommunication.begin(device_id, &flower);
 
     ledIndicator.blink(2000, 100);
     Log::info("Running main sequence waiting for commands");

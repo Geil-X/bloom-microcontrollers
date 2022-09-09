@@ -1,6 +1,7 @@
 #ifndef FLOWER_MATHEXTRA_H
 #define FLOWER_MATHEXTRA_H
 
+#include <Arduino.h>
 #include <FastLED.h>
 
 #include <Types.h>
@@ -47,5 +48,21 @@ static inline Percentage randomPercentage() {
     return random16();
 }
 
+static inline float randomFloat(float min, float max)
+{
+    return min + (float) random(1 << 15) * (max - min) / (1 << 15);
+}
+
+/**
+ * Randomly get a success or failure based on the percentage chance of success
+ * from 0 -> 100% success rate.
+ *
+ * @return A success or failure of the chance roll.
+ */
+static inline bool chance(float successRate) {
+    if (successRate < 0) return false;
+    if (successRate > 100) return true;
+    return randomFloat(0., 100.) < successRate;
+}
 
 #endif //FLOWER_MATHEXTRA_H
