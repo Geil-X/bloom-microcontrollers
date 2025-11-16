@@ -16,16 +16,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
       - name: Cache PlatformIO
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.platformio
           key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v6
 
       - name: Install PlatformIO
         run: |
@@ -44,7 +44,7 @@ jobs:
           mv .pio/build/flower_emotional_standalone/firmware.hex .pio/build/firmware/flower_emotional_standalone.hex
 
       - name: Store Group Communication Binary Hex Firmware
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v5
         with:
           name: flower_firmware
           path: .pio/build/firmware/*
